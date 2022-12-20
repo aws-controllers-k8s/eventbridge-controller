@@ -13,7 +13,10 @@ description: |-
   **About Amazon EventBridge**
 
 
-  {ADD YOUR DESCRIPTION HERE}
+  EventBridge is a serverless service that uses events to connect application components together, making it easier for 
+  you to build scalable event-driven applications. Use it to route events from sources such as home-grown applications, 
+  AWS services, and third- party software to consumer applications across your organization. EventBridge provides a simple
+  and consistent way to ingest, filter, transform, and deliver events so you can build new applications quickly.
 
 
   **About the AWS Controllers for Kubernetes**
@@ -22,13 +25,13 @@ description: |-
   This controller is a component of the [AWS Controller for Kubernetes](https://github.com/aws/aws-controllers-k8s)
   project. This project is currently in **developer preview**.
 samples:
-- kind: ExampleCustomKind
+- kind: EventBus
   spec: '{}'
-- kind: SecondExampleCustomKind
+- kind: Rule
   spec: '{}'
 maintainers:
 - name: "eventbridge maintainer team"
   email: "ack-maintainers@amazon.com"
 links:
 - name: Amazon EventBridge Developer Resources
-  url: "{YOUR SERVICE DEVELOPER RESOURCES URL}"
+  url: https://aws.amazon.com/eventbridge/resources/
