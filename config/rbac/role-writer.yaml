@@ -9,6 +9,7 @@ rules:
 - apiGroups:
   - eventbridge.services.k8s.aws
   resources:
+  - eventbuses
   verbs:
   - create
   - delete
@@ -20,6 +21,7 @@ rules:
 - apiGroups:
   - eventbridge.services.k8s.aws
   resources:
+  - eventbuses
   verbs:
   - get
   - patch
