@@ -75,7 +75,7 @@ func (rm *resourceManager) customUpdate(
 ) (*resource, error) {
 	var err error
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.customUpdateEventBus")
+	exit := rlog.Trace("rm.customUpdate")
 	defer func() { exit(err) }()
 
 	if immutableFieldChanges := rm.getImmutableFieldChanges(delta); len(immutableFieldChanges) > 0 {
@@ -99,7 +99,7 @@ func (rm *resourceManager) syncTags(
 	desired *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncEventBusTags")
+	exit := rlog.Trace("rm.syncTags")
 	defer func() { exit(err) }()
 
 	missing, extra := computeTagsDelta(desired.ko.Spec.Tags, latest.ko.Spec.Tags)
