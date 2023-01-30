@@ -1,0 +1,9 @@
+apiVersion: eventbridge.services.k8s.aws/v1alpha1
+kind: EventBus
+metadata:
+  name: $BUS_NAME
+spec:
+  name: $BUS_NAME
+  tags:
+  - key: key
+    value: value
