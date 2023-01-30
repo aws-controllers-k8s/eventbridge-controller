@@ -210,7 +210,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	return rm.customUpdateEventBus(ctx, desired, latest, delta)
+	return rm.customUpdate(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
@@ -356,11 +356,11 @@ func (rm *resourceManager) getImmutableFieldChanges(
 	delta *ackcompare.Delta,
 ) []string {
 	var fields []string
-	if delta.DifferentAt("Spec.EventBusName") {
-		fields = append(fields, "EventBusName")
-	}
 	if delta.DifferentAt("Spec.Name") {
 		fields = append(fields, "Name")
+	}
+	if delta.DifferentAt("Spec.EventBusName") {
+		fields = append(fields, "EventBusName")
 	}
 
 	return fields

@@ -40,6 +40,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.EventSourceName, b.ko.Spec.EventSourceName) {
 		delta.Add("Spec.EventSourceName", a.ko.Spec.EventSourceName, b.ko.Spec.EventSourceName)
@@ -54,9 +55,6 @@ func newResourceDelta(
 		if *a.ko.Spec.Name != *b.ko.Spec.Name {
 			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
-	}
-	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 
 	return delta

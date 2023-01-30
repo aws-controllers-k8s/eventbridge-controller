@@ -3,6 +3,7 @@ package event_bus
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
@@ -38,7 +39,7 @@ func (e *ebMockAPIClient) UntagResourceWithContext(_ aws.Context, input *eventbr
 	return nil, e.response
 }
 
-func Test_resourceManager_syncEventBusTags(t *testing.T) {
+func Test_resourceManager_syncTags(t *testing.T) {
 	type args struct {
 		latest  *resource
 		desired *resource
@@ -216,7 +217,7 @@ func Test_resourceManager_syncEventBusTags(t *testing.T) {
 				sdkapi:  &api,
 			}
 
-			err := rm.syncEventBusTags(context.TODO(), tt.args.latest, tt.args.desired)
+			err := rm.syncTags(context.TODO(), tt.args.latest, tt.args.desired)
 			assert.Equal(t, err, tt.wantErr)
 			assert.Equal(t, tt.wantCalls, api.calls)
 			assert.DeepEqual(t, tt.wantTagInput, api.tagInput)
@@ -235,5 +236,128 @@ func getResource(tags ...*svcapitypes.Tag) *svcapitypes.EventBus {
 				ARN: &arn,
 			},
 		},
+	}
+}
+
+func Test_computeTagsDelta(t *testing.T) {
+	type args struct {
+		desired []*svcapitypes.Tag
+		latest  []*svcapitypes.Tag
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantMissing []*svcapitypes.Tag
+		wantExtra   []*svcapitypes.Tag
+	}{
+		{
+			name: "nil values on desired and latest tags",
+			args: args{
+				desired: nil,
+				latest:  nil,
+			},
+			wantMissing: nil,
+			wantExtra:   nil,
+		},
+		{
+			name: "desired tags nil, latest with one tag",
+			args: args{
+				desired: nil,
+				latest: []*svcapitypes.Tag{
+					{
+						Key:   aws.String("akey"),
+						Value: aws.String("avalue"),
+					},
+				},
+			},
+			wantMissing: nil,
+			wantExtra: []*svcapitypes.Tag{{
+				Key:   aws.String("akey"),
+				Value: aws.String("avalue"),
+			}},
+		},
+		{
+			name: "desired with two tags, latest with one tag with different value",
+			args: args{
+				desired: []*svcapitypes.Tag{
+					{
+						Key:   aws.String("akey"),
+						Value: aws.String("avalue"),
+					},
+					{
+						Key:   aws.String("bkey"),
+						Value: aws.String("bvalue"),
+					},
+				},
+				latest: []*svcapitypes.Tag{
+					{
+						Key:   aws.String("akey"),
+						Value: aws.String("avalue-old"),
+					},
+				},
+			},
+			wantMissing: []*svcapitypes.Tag{
+				{
+					Key:   aws.String("akey"),
+					Value: aws.String("avalue"),
+				},
+				{
+					Key:   aws.String("bkey"),
+					Value: aws.String("bvalue"),
+				},
+			},
+			wantExtra: nil,
+		},
+		{
+			name: "desired with three tags, latest with two tags one with same value one with different value",
+			args: args{
+				desired: []*svcapitypes.Tag{
+					{
+						Key:   aws.String("akey"),
+						Value: aws.String("avalue"),
+					},
+					{
+						Key:   aws.String("bkey"),
+						Value: aws.String("bvalue"),
+					},
+					{
+						Key:   aws.String("ckey"),
+						Value: aws.String("cvalue"),
+					},
+				},
+				latest: []*svcapitypes.Tag{
+					{
+						Key:   aws.String("akey"),
+						Value: aws.String("avalue"),
+					},
+					{
+						Key:   aws.String("bkey"),
+						Value: aws.String("bvalue-old"),
+					},
+				},
+			},
+			wantMissing: []*svcapitypes.Tag{
+				{
+					Key:   aws.String("bkey"),
+					Value: aws.String("bvalue"),
+				},
+				{
+					Key:   aws.String("ckey"),
+					Value: aws.String("cvalue"),
+				},
+			},
+			wantExtra: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotMissing, gotExtra := computeTagsDelta(tt.args.desired, tt.args.latest)
+			if !reflect.DeepEqual(gotMissing, tt.wantMissing) {
+				t.Errorf("computeTagsDelta() gotMissing = %v, want %v", gotMissing, tt.wantMissing)
+			}
+			if !reflect.DeepEqual(gotExtra, tt.wantExtra) {
+				t.Errorf("computeTagsDelta() gotExtra = %v, want %v", gotExtra, tt.wantExtra)
+			}
+		})
 	}
 }

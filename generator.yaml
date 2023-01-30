@@ -14,6 +14,9 @@ resources:
         is_required: true
       EventBusName:
         is_immutable: true
+      Tags:
+        compare:
+          is_ignored: true
     shortNames:
       - eb
       - bus
@@ -28,8 +31,10 @@ resources:
           json_path: .status.conditions[?(@.type=="ACK.ResourceSynced")].status
           type: string
     update_operation:
-      custom_method_name: customUpdateEventBus
+      custom_method_name: customUpdate
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_read_one_post_set_output:
         template_path: hooks/eventbus/sdk_read_one_post_set_output.go.tpl
     exceptions:
