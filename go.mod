@@ -3,7 +3,7 @@ module github.com/aws-controllers-k8s/eventbridge-controller
 go 1.19
 
 require (
-	github.com/aws-controllers-k8s/runtime v0.22.1
+	github.com/aws-controllers-k8s/runtime v0.23.0
 	github.com/aws/aws-sdk-go v1.44.97
 	github.com/spf13/pflag v1.0.5
 	k8s.io/apimachinery v0.23.0
