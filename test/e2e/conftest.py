@@ -42,4 +42,4 @@ def k8s_client():
 
 @pytest.fixture(scope='module')
 def eventbridge_client():
-    return boto3.client('eventbridge')
+    return boto3.client('events')

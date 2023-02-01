@@ -3,3 +3,4 @@ kind: Kustomization
 bases:
   - common
 resources:
+  - bases/eventbridge.services.k8s.aws_eventbuses.yaml
