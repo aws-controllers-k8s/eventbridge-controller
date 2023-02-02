@@ -356,11 +356,11 @@ func (rm *resourceManager) getImmutableFieldChanges(
 	delta *ackcompare.Delta,
 ) []string {
 	var fields []string
-	if delta.DifferentAt("Spec.Name") {
-		fields = append(fields, "Name")
-	}
 	if delta.DifferentAt("Spec.EventBusName") {
 		fields = append(fields, "EventBusName")
+	}
+	if delta.DifferentAt("Spec.Name") {
+		fields = append(fields, "Name")
 	}
 
 	return fields
