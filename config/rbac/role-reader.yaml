@@ -10,6 +10,7 @@ rules:
   - eventbridge.services.k8s.aws
   resources:
   - eventbuses
+  - rules
   verbs:
   - get
   - list
