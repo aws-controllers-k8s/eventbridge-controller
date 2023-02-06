@@ -34,6 +34,27 @@ class EventBridgeValidator:
     def event_bus_exists(self, event_bus_name) -> bool:
         return self.get_event_bus(event_bus_name) is not None
 
+    def get_rule(self, bus_name: str, rule_name: str) -> dict:
+        try:
+            resp = self.eventbridge_client.describe_rule(
+                Name=rule_name,
+                EventBusName=bus_name,
+            )
+        except Exception as e:
+            logging.debug(e)
+            return None
+        return resp
+
+    def rule_exists(self, bus_name: str, rule_name: str) -> bool:
+        return self.get_rule(bus_name, rule_name) is not None
+
+    def get_rule_targets(self, bus_name: str, rule_name: str):
+        resource_targets = self.eventbridge_client.list_targets_by_rule(
+            Rule=rule_name,
+            EventBusName=bus_name,
+        )
+        return resource_targets['Targets']
+
     def get_resource_tags(self, resource_arn: str):
         resource_tags = self.eventbridge_client.list_tags_for_resource(
             ResourceARN=resource_arn,

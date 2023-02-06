@@ -15,6 +15,7 @@
 import logging
 
 from acktest.bootstrapping import Resources, BootstrapFailureException
+from acktest.bootstrapping.sqs import Queue
 
 from e2e import bootstrap_directory
 from e2e.bootstrap_resources import BootstrapResources
@@ -23,7 +24,9 @@ def service_bootstrap() -> Resources:
     logging.getLogger().setLevel(logging.INFO)
 
     resources = BootstrapResources(
-        # TODO: Add bootstrapping when you have defined the resources
+        TargetQueue=Queue(
+            "ack-eventbridge-controller-queue"
+        ),
     )
 
     try:
