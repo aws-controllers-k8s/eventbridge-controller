@@ -125,7 +125,7 @@ type DeadLetterConfig struct {
 }
 
 // The custom parameters to be used when the target is an Amazon ECS task.
-type EcsParameters struct {
+type ECSParameters struct {
 	CapacityProviderStrategy []*CapacityProviderStrategyItem `json:"capacityProviderStrategy,omitempty"`
 	EnableECSManagedTags     *bool                           `json:"enableECSManagedTags,omitempty"`
 	EnableExecuteCommand     *bool                           `json:"enableExecuteCommand,omitempty"`
@@ -344,7 +344,7 @@ type Target struct {
 	// configuration.
 	DeadLetterConfig *DeadLetterConfig `json:"deadLetterConfig,omitempty"`
 	// The custom parameters to be used when the target is an Amazon ECS task.
-	EcsParameters *EcsParameters `json:"ecsParameters,omitempty"`
+	ECSParameters *ECSParameters `json:"ecsParameters,omitempty"`
 	// These are custom parameter to be used when the target is an API Gateway REST
 	// APIs or EventBridge ApiDestinations. In the latter case, these are merged
 	// with any InvocationParameters specified on the Connection, with any values

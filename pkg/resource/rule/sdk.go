@@ -549,11 +549,11 @@ func (rm *resourceManager) getImmutableFieldChanges(
 	delta *ackcompare.Delta,
 ) []string {
 	var fields []string
-	if delta.DifferentAt("Spec.EventBusName") {
-		fields = append(fields, "EventBusName")
-	}
 	if delta.DifferentAt("Spec.Name") {
 		fields = append(fields, "Name")
+	}
+	if delta.DifferentAt("Spec.EventBusName") {
+		fields = append(fields, "EventBusName")
 	}
 
 	return fields
@@ -600,11 +600,11 @@ func sdkTargetsFromResourceTargets(
 			}
 			t.SetDeadLetterConfig(tf2)
 		}
-		if krTarget.EcsParameters != nil {
+		if krTarget.ECSParameters != nil {
 			tf3 := &svcsdk.EcsParameters{}
-			if krTarget.EcsParameters.CapacityProviderStrategy != nil {
+			if krTarget.ECSParameters.CapacityProviderStrategy != nil {
 				tf3f0 := []*svcsdk.CapacityProviderStrategyItem{}
-				for _, tf3f0iter := range krTarget.EcsParameters.CapacityProviderStrategy {
+				for _, tf3f0iter := range krTarget.ECSParameters.CapacityProviderStrategy {
 					tf3f0elem := &svcsdk.CapacityProviderStrategyItem{}
 					if tf3f0iter.Base != nil {
 						tf3f0elem.SetBase(*tf3f0iter.Base)
@@ -619,37 +619,37 @@ func sdkTargetsFromResourceTargets(
 				}
 				tf3.SetCapacityProviderStrategy(tf3f0)
 			}
-			if krTarget.EcsParameters.EnableECSManagedTags != nil {
-				tf3.SetEnableECSManagedTags(*krTarget.EcsParameters.EnableECSManagedTags)
+			if krTarget.ECSParameters.EnableECSManagedTags != nil {
+				tf3.SetEnableECSManagedTags(*krTarget.ECSParameters.EnableECSManagedTags)
 			}
-			if krTarget.EcsParameters.EnableExecuteCommand != nil {
-				tf3.SetEnableExecuteCommand(*krTarget.EcsParameters.EnableExecuteCommand)
+			if krTarget.ECSParameters.EnableExecuteCommand != nil {
+				tf3.SetEnableExecuteCommand(*krTarget.ECSParameters.EnableExecuteCommand)
 			}
-			if krTarget.EcsParameters.Group != nil {
-				tf3.SetGroup(*krTarget.EcsParameters.Group)
+			if krTarget.ECSParameters.Group != nil {
+				tf3.SetGroup(*krTarget.ECSParameters.Group)
 			}
-			if krTarget.EcsParameters.LaunchType != nil {
-				tf3.SetLaunchType(*krTarget.EcsParameters.LaunchType)
+			if krTarget.ECSParameters.LaunchType != nil {
+				tf3.SetLaunchType(*krTarget.ECSParameters.LaunchType)
 			}
-			if krTarget.EcsParameters.NetworkConfiguration != nil {
+			if krTarget.ECSParameters.NetworkConfiguration != nil {
 				tf3f5 := &svcsdk.NetworkConfiguration{}
-				if krTarget.EcsParameters.NetworkConfiguration.AWSvpcConfiguration != nil {
+				if krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration != nil {
 					tf3f5f0 := &svcsdk.AwsVpcConfiguration{}
-					if krTarget.EcsParameters.NetworkConfiguration.AWSvpcConfiguration.AssignPublicIP != nil {
-						tf3f5f0.SetAssignPublicIp(*krTarget.EcsParameters.NetworkConfiguration.AWSvpcConfiguration.AssignPublicIP)
+					if krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.AssignPublicIP != nil {
+						tf3f5f0.SetAssignPublicIp(*krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.AssignPublicIP)
 					}
-					if krTarget.EcsParameters.NetworkConfiguration.AWSvpcConfiguration.SecurityGroups != nil {
+					if krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.SecurityGroups != nil {
 						tf3f5f0f1 := []*string{}
-						for _, tf3f5f0f1iter := range krTarget.EcsParameters.NetworkConfiguration.AWSvpcConfiguration.SecurityGroups {
+						for _, tf3f5f0f1iter := range krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.SecurityGroups {
 							var tf3f5f0f1elem string
 							tf3f5f0f1elem = *tf3f5f0f1iter
 							tf3f5f0f1 = append(tf3f5f0f1, &tf3f5f0f1elem)
 						}
 						tf3f5f0.SetSecurityGroups(tf3f5f0f1)
 					}
-					if krTarget.EcsParameters.NetworkConfiguration.AWSvpcConfiguration.Subnets != nil {
+					if krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.Subnets != nil {
 						tf3f5f0f2 := []*string{}
-						for _, tf3f5f0f2iter := range krTarget.EcsParameters.NetworkConfiguration.AWSvpcConfiguration.Subnets {
+						for _, tf3f5f0f2iter := range krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.Subnets {
 							var tf3f5f0f2elem string
 							tf3f5f0f2elem = *tf3f5f0f2iter
 							tf3f5f0f2 = append(tf3f5f0f2, &tf3f5f0f2elem)
@@ -660,9 +660,9 @@ func sdkTargetsFromResourceTargets(
 				}
 				tf3.SetNetworkConfiguration(tf3f5)
 			}
-			if krTarget.EcsParameters.PlacementConstraints != nil {
+			if krTarget.ECSParameters.PlacementConstraints != nil {
 				tf3f6 := []*svcsdk.PlacementConstraint{}
-				for _, tf3f6iter := range krTarget.EcsParameters.PlacementConstraints {
+				for _, tf3f6iter := range krTarget.ECSParameters.PlacementConstraints {
 					tf3f6elem := &svcsdk.PlacementConstraint{}
 					if tf3f6iter.Expression != nil {
 						tf3f6elem.SetExpression(*tf3f6iter.Expression)
@@ -674,9 +674,9 @@ func sdkTargetsFromResourceTargets(
 				}
 				tf3.SetPlacementConstraints(tf3f6)
 			}
-			if krTarget.EcsParameters.PlacementStrategy != nil {
+			if krTarget.ECSParameters.PlacementStrategy != nil {
 				tf3f7 := []*svcsdk.PlacementStrategy{}
-				for _, tf3f7iter := range krTarget.EcsParameters.PlacementStrategy {
+				for _, tf3f7iter := range krTarget.ECSParameters.PlacementStrategy {
 					tf3f7elem := &svcsdk.PlacementStrategy{}
 					if tf3f7iter.Field != nil {
 						tf3f7elem.SetField(*tf3f7iter.Field)
@@ -688,18 +688,18 @@ func sdkTargetsFromResourceTargets(
 				}
 				tf3.SetPlacementStrategy(tf3f7)
 			}
-			if krTarget.EcsParameters.PlatformVersion != nil {
-				tf3.SetPlatformVersion(*krTarget.EcsParameters.PlatformVersion)
+			if krTarget.ECSParameters.PlatformVersion != nil {
+				tf3.SetPlatformVersion(*krTarget.ECSParameters.PlatformVersion)
 			}
-			if krTarget.EcsParameters.PropagateTags != nil {
-				tf3.SetPropagateTags(*krTarget.EcsParameters.PropagateTags)
+			if krTarget.ECSParameters.PropagateTags != nil {
+				tf3.SetPropagateTags(*krTarget.ECSParameters.PropagateTags)
 			}
-			if krTarget.EcsParameters.ReferenceID != nil {
-				tf3.SetReferenceId(*krTarget.EcsParameters.ReferenceID)
+			if krTarget.ECSParameters.ReferenceID != nil {
+				tf3.SetReferenceId(*krTarget.ECSParameters.ReferenceID)
 			}
-			if krTarget.EcsParameters.Tags != nil {
+			if krTarget.ECSParameters.Tags != nil {
 				tf3f11 := []*svcsdk.Tag{}
-				for _, tf3f11iter := range krTarget.EcsParameters.Tags {
+				for _, tf3f11iter := range krTarget.ECSParameters.Tags {
 					tf3f11elem := &svcsdk.Tag{}
 					if tf3f11iter.Key != nil {
 						tf3f11elem.SetKey(*tf3f11iter.Key)
@@ -711,11 +711,11 @@ func sdkTargetsFromResourceTargets(
 				}
 				tf3.SetTags(tf3f11)
 			}
-			if krTarget.EcsParameters.TaskCount != nil {
-				tf3.SetTaskCount(*krTarget.EcsParameters.TaskCount)
+			if krTarget.ECSParameters.TaskCount != nil {
+				tf3.SetTaskCount(*krTarget.ECSParameters.TaskCount)
 			}
-			if krTarget.EcsParameters.TaskDefinitionARN != nil {
-				tf3.SetTaskDefinitionArn(*krTarget.EcsParameters.TaskDefinitionARN)
+			if krTarget.ECSParameters.TaskDefinitionARN != nil {
+				tf3.SetTaskDefinitionArn(*krTarget.ECSParameters.TaskDefinitionARN)
 			}
 			t.SetEcsParameters(tf3)
 		}
@@ -915,7 +915,7 @@ func resourceTargetsFromSDKTargets(
 			t.DeadLetterConfig = tf2
 		}
 		if sdkTarget.EcsParameters != nil {
-			tf3 := &svcapitypes.EcsParameters{}
+			tf3 := &svcapitypes.ECSParameters{}
 			if sdkTarget.EcsParameters.CapacityProviderStrategy != nil {
 				tf3f0 := []*svcapitypes.CapacityProviderStrategyItem{}
 				for _, tf3f0iter := range sdkTarget.EcsParameters.CapacityProviderStrategy {
@@ -1031,7 +1031,7 @@ func resourceTargetsFromSDKTargets(
 			if sdkTarget.EcsParameters.TaskDefinitionArn != nil {
 				tf3.TaskDefinitionARN = sdkTarget.EcsParameters.TaskDefinitionArn
 			}
-			t.EcsParameters = tf3
+			t.ECSParameters = tf3
 		}
 		if sdkTarget.HttpParameters != nil {
 			tf4 := &svcapitypes.HTTPParameters{}

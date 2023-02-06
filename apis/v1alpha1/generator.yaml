@@ -28,13 +28,10 @@ resources:
       - bus
     print:
       add_age_column: true
-      add_synced_column: false
+      add_synced_column: true
       additional_columns:
         - name: ARN
           json_path: .status.ackResourceMetadata.arn
-          type: string
-        - name: SYNCED
-          json_path: .status.conditions[?(@.type=="ACK.ResourceSynced")].status
           type: string
     update_operation:
       custom_method_name: customUpdate
@@ -86,13 +83,10 @@ resources:
       - er # event rule
     print:
       add_age_column: true
-      add_synced_column: false
+      add_synced_column: true
       additional_columns:
         - name: ARN
           json_path: .status.ackResourceMetadata.arn
-          type: string
-        - name: SYNCED
-          json_path: .status.conditions[?(@.type=="ACK.ResourceSynced")].status
           type: string
     exceptions:
       errors:
