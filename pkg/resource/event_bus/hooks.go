@@ -7,12 +7,12 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	"github.com/aws-controllers-k8s/runtime/pkg/errors"
-	"github.com/aws-controllers-k8s/runtime/pkg/util"
 	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
 
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 
 	svcapitypes "github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
+	pkgtags "github.com/aws-controllers-k8s/eventbridge-controller/pkg/tags"
 )
 
 // setResourceAdditionalFields will set the fields that are not returned by
@@ -102,7 +102,7 @@ func (rm *resourceManager) syncTags(
 	exit := rlog.Trace("rm.syncTags")
 	defer func() { exit(err) }()
 
-	missing, extra := computeTagsDelta(desired.ko.Spec.Tags, latest.ko.Spec.Tags)
+	missing, extra := pkgtags.ComputeTagsDelta(desired.ko.Spec.Tags, latest.ko.Spec.Tags)
 
 	arn := (*string)(latest.ko.Status.ACKResourceMetadata.ARN)
 	if len(extra) > 0 {
@@ -133,47 +133,6 @@ func (rm *resourceManager) syncTags(
 		}
 	}
 	return nil
-}
-
-// computeTagsDelta compares two Tag arrays and return two different lists
-// containing the added and removed tags.
-// The removed tags list only contains the Key of tags
-func computeTagsDelta(
-	desired []*svcapitypes.Tag,
-	latest []*svcapitypes.Tag,
-) (missing, extra []*svcapitypes.Tag) {
-	var visitedIndexes []string
-mainLoop:
-	for _, le := range latest {
-		visitedIndexes = append(visitedIndexes, *le.Key)
-		for _, de := range desired {
-			if equalStrings(le.Key, de.Key) {
-				if !equalStrings(le.Value, de.Value) {
-					missing = append(missing, de)
-				}
-				continue mainLoop
-			}
-		}
-		extra = append(extra, le)
-	}
-	for _, de := range desired {
-		if !util.InStrings(*de.Key, visitedIndexes) {
-			missing = append(missing, de)
-		}
-	}
-	return missing, extra
-}
-
-func equalStrings(a, b *string) bool {
-	if a == nil {
-		return b == nil || *b == ""
-	}
-
-	if a != nil && b == nil {
-		return false
-	}
-
-	return (*a == "" && b == nil) || *a == *b
 }
 
 // sdkTagsFromResourceTags transforms a *svcapitypes.Tag array to a *svcsdk.Tag array.
@@ -208,17 +167,7 @@ func compareTags(
 		delta.Add("Spec.Tags", desired.ko.Spec.Tags, latest.ko.Spec.Tags)
 		return
 	}
-	if !equalTags(desired.ko.Spec.Tags, latest.ko.Spec.Tags) {
+	if !pkgtags.EqualTags(desired.ko.Spec.Tags, latest.ko.Spec.Tags) {
 		delta.Add("Spec.Tags", desired.ko.Spec.Tags, latest.ko.Spec.Tags)
 	}
-}
-
-// equalTags returns true if two Tag arrays are equal regardless of the order
-// of their elements.
-func equalTags(
-	desired []*svcapitypes.Tag,
-	latest []*svcapitypes.Tag,
-) bool {
-	addedOrUpdated, removed := computeTagsDelta(desired, latest)
-	return len(addedOrUpdated) == 0 && len(removed) == 0
 }

@@ -1,0 +1,11 @@
+apiVersion: eventbridge.services.k8s.aws/v1alpha1
+kind: Rule
+metadata:
+  name: $RULE_NAME
+spec:
+  name: $RULE_NAME
+  eventBusName: $BUS_NAME
+  eventPattern: "$EVENT_PATTERN"
+  tags:
+  - key: env
+    value: testing

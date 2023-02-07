@@ -23,7 +23,7 @@ spec:
       name: ARN
       type: string
     - jsonPath: .status.conditions[?(@.type=="ACK.ResourceSynced")].status
-      name: SYNCED
+      name: Synced
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age

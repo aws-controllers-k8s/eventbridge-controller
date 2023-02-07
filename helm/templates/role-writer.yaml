@@ -11,6 +11,8 @@ rules:
   resources:
   - eventbuses
 
+  - rules
+
   verbs:
   - create
   - delete
@@ -23,6 +25,7 @@ rules:
   - eventbridge.services.k8s.aws
   resources:
   - eventbuses
+  - rules
   verbs:
   - get
   - patch

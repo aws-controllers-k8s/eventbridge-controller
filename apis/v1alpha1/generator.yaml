@@ -6,6 +6,12 @@ ignore:
       - Endpoint
       # - EventBus
       - PartnerEventSource
+operations:
+  PutRule:
+    operation_type:
+      - Create
+      - Update
+    resource_name: Rule
 resources:
   EventBus:
     fields:
@@ -22,13 +28,10 @@ resources:
       - bus
     print:
       add_age_column: true
-      add_synced_column: false
+      add_synced_column: true
       additional_columns:
         - name: ARN
           json_path: .status.ackResourceMetadata.arn
-          type: string
-        - name: SYNCED
-          json_path: .status.conditions[?(@.type=="ACK.ResourceSynced")].status
           type: string
     update_operation:
       custom_method_name: customUpdate
@@ -44,3 +47,53 @@ resources:
       # no terminal code for validation errors to prevent dead-locking on delete
       # example: delete rule and bus - bus throws validation error on delete if it still has rules
       # making this terminal would leak bus resources in AWS and K8s control planes
+  Rule:
+    fields:
+      EventBusName:
+        is_immutable: true # seems to not affect EventBusRef
+        references:
+          resource: EventBus
+          path: Spec.Name
+      Tags:
+        compare:
+          is_ignored: true
+      Name:
+        is_immutable: true
+      Targets:
+        custom_field:
+          list_of: Target # note: does not add comment nor kube-markers to generated code
+        compare:
+          is_ignored: true
+    hooks:
+      sdk_read_one_post_set_output:
+        template_path: hooks/rule/sdk_read_one_post_set_output.go.tpl
+      sdk_create_pre_build_request:
+        template_path: hooks/rule/sdk_create_pre_build_request.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/rule/sdk_create_post_set_output.go.tpl
+      sdk_update_pre_build_request:
+        template_path: hooks/rule/sdk_update_pre_build_request.go.tpl
+      sdk_delete_pre_build_request:
+        template_path: hooks/rule/sdk_delete_pre_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/rule/sdk_file_end.go.tpl
+      delta_pre_compare:
+        code: customPreCompare(delta, a, b)
+    shortNames:
+      - er # event rule
+    print:
+      add_age_column: true
+      add_synced_column: true
+      additional_columns:
+        - name: ARN
+          json_path: .status.ackResourceMetadata.arn
+          type: string
+    exceptions:
+      errors:
+        404:
+          code: ResourceNotFoundException
+      terminal_codes:
+        - InvalidEventPatternException
+        - ManagedRuleException # we don't support force because those rules are not managed by ACK
+        - ValidationError
+        - ValidationException

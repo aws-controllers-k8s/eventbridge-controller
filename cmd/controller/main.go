@@ -35,6 +35,7 @@ import (
 	svcresource "github.com/aws-controllers-k8s/eventbridge-controller/pkg/resource"
 
 	_ "github.com/aws-controllers-k8s/eventbridge-controller/pkg/resource/event_bus"
+	_ "github.com/aws-controllers-k8s/eventbridge-controller/pkg/resource/rule"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/pkg/version"
 )

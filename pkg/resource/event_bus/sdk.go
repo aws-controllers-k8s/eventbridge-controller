@@ -104,6 +104,7 @@ func (rm *resourceManager) sdkFind(
 	if err := rm.setResourceAdditionalFields(ctx, ko); err != nil {
 		return nil, err
 	}
+
 	return &resource{ko}, nil
 }
 
@@ -356,11 +357,11 @@ func (rm *resourceManager) getImmutableFieldChanges(
 	delta *ackcompare.Delta,
 ) []string {
 	var fields []string
-	if delta.DifferentAt("Spec.EventBusName") {
-		fields = append(fields, "EventBusName")
-	}
 	if delta.DifferentAt("Spec.Name") {
 		fields = append(fields, "Name")
+	}
+	if delta.DifferentAt("Spec.EventBusName") {
+		fields = append(fields, "EventBusName")
 	}
 
 	return fields
