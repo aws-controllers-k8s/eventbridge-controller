@@ -3,7 +3,7 @@ api_directory_checksum: 16009bf6d9bb3a2d293a94bcb3984f9969770edb
   build_hash: b55ae8752ece381c383ffe5b388ed2147c6b30d8
   go_version: go1.19.5
   version: v0.23.1-4-g92c80ba
-api_directory_checksum: e9bcf7cc35d113b2a11a742ebf8024801598e378
+api_directory_checksum: cca146e2e27cc0c4dc130b6abe826ab55fb1aeeb
 api_version: v1alpha1
 aws_sdk_go_version: v1.44.97
 generator_config_info:
