@@ -633,23 +633,23 @@ func sdkTargetsFromResourceTargets(
 			}
 			if krTarget.ECSParameters.NetworkConfiguration != nil {
 				tf3f5 := &svcsdk.NetworkConfiguration{}
-				if krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration != nil {
+				if krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration != nil {
 					tf3f5f0 := &svcsdk.AwsVpcConfiguration{}
-					if krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.AssignPublicIP != nil {
-						tf3f5f0.SetAssignPublicIp(*krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.AssignPublicIP)
+					if krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.AssignPublicIP != nil {
+						tf3f5f0.SetAssignPublicIp(*krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.AssignPublicIP)
 					}
-					if krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.SecurityGroups != nil {
+					if krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.SecurityGroups != nil {
 						tf3f5f0f1 := []*string{}
-						for _, tf3f5f0f1iter := range krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.SecurityGroups {
+						for _, tf3f5f0f1iter := range krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.SecurityGroups {
 							var tf3f5f0f1elem string
 							tf3f5f0f1elem = *tf3f5f0f1iter
 							tf3f5f0f1 = append(tf3f5f0f1, &tf3f5f0f1elem)
 						}
 						tf3f5f0.SetSecurityGroups(tf3f5f0f1)
 					}
-					if krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.Subnets != nil {
+					if krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.Subnets != nil {
 						tf3f5f0f2 := []*string{}
-						for _, tf3f5f0f2iter := range krTarget.ECSParameters.NetworkConfiguration.AWSvpcConfiguration.Subnets {
+						for _, tf3f5f0f2iter := range krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.Subnets {
 							var tf3f5f0f2elem string
 							tf3f5f0f2elem = *tf3f5f0f2iter
 							tf3f5f0f2 = append(tf3f5f0f2, &tf3f5f0f2elem)
@@ -970,7 +970,7 @@ func resourceTargetsFromSDKTargets(
 						}
 						tf3f5f0.Subnets = tf3f5f0f2
 					}
-					tf3f5.AWSvpcConfiguration = tf3f5f0
+					tf3f5.AWSVPCConfiguration = tf3f5f0
 				}
 				tf3.NetworkConfiguration = tf3f5
 			}

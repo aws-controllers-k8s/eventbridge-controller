@@ -194,7 +194,7 @@ type NetworkConfiguration struct {
 	// This structure specifies the VPC subnets and security groups for the task,
 	// and whether a public IP address is to be used. This structure is relevant
 	// only for ECS tasks that use the awsvpc network mode.
-	AWSvpcConfiguration *AWSVPCConfiguration `json:"awsvpcConfiguration,omitempty"`
+	AWSVPCConfiguration *AWSVPCConfiguration `json:"awsVPCConfiguration,omitempty"`
 }
 
 // A partner event source is created by an SaaS partner. If a customer creates
