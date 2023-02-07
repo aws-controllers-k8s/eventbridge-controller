@@ -247,7 +247,7 @@ type RedshiftDataParameters struct {
 	Database         *string `json:"database,omitempty"`
 	DBUser           *string `json:"dbUser,omitempty"`
 	SecretManagerARN *string `json:"secretManagerARN,omitempty"`
-	Sql              *string `json:"sql,omitempty"`
+	SQL              *string `json:"sql,omitempty"`
 	StatementName    *string `json:"statementName,omitempty"`
 	WithEvent        *bool   `json:"withEvent,omitempty"`
 }

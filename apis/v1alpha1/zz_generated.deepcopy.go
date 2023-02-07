@@ -921,8 +921,8 @@ func (in *RedshiftDataParameters) DeepCopyInto(out *RedshiftDataParameters) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.Sql != nil {
-		in, out := &in.Sql, &out.Sql
+	if in.SQL != nil {
+		in, out := &in.SQL, &out.SQL
 		*out = new(string)
 		**out = **in
 	}

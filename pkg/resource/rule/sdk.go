@@ -549,11 +549,11 @@ func (rm *resourceManager) getImmutableFieldChanges(
 	delta *ackcompare.Delta,
 ) []string {
 	var fields []string
-	if delta.DifferentAt("Spec.Name") {
-		fields = append(fields, "Name")
-	}
 	if delta.DifferentAt("Spec.EventBusName") {
 		fields = append(fields, "EventBusName")
+	}
+	if delta.DifferentAt("Spec.Name") {
+		fields = append(fields, "Name")
 	}
 
 	return fields
@@ -793,8 +793,8 @@ func sdkTargetsFromResourceTargets(
 			if krTarget.RedshiftDataParameters.SecretManagerARN != nil {
 				tf10.SetSecretManagerArn(*krTarget.RedshiftDataParameters.SecretManagerARN)
 			}
-			if krTarget.RedshiftDataParameters.Sql != nil {
-				tf10.SetSql(*krTarget.RedshiftDataParameters.Sql)
+			if krTarget.RedshiftDataParameters.SQL != nil {
+				tf10.SetSql(*krTarget.RedshiftDataParameters.SQL)
 			}
 			if krTarget.RedshiftDataParameters.StatementName != nil {
 				tf10.SetStatementName(*krTarget.RedshiftDataParameters.StatementName)
@@ -1108,7 +1108,7 @@ func resourceTargetsFromSDKTargets(
 				tf10.SecretManagerARN = sdkTarget.RedshiftDataParameters.SecretManagerArn
 			}
 			if sdkTarget.RedshiftDataParameters.Sql != nil {
-				tf10.Sql = sdkTarget.RedshiftDataParameters.Sql
+				tf10.SQL = sdkTarget.RedshiftDataParameters.Sql
 			}
 			if sdkTarget.RedshiftDataParameters.StatementName != nil {
 				tf10.StatementName = sdkTarget.RedshiftDataParameters.StatementName
