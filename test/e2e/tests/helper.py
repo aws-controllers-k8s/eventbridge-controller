@@ -55,6 +55,20 @@ class EventBridgeValidator:
         )
         return resource_targets['Targets']
 
+    def get_archive(self, archive_name: str) -> dict:
+        try:
+            resp = self.eventbridge_client.describe_archive(
+                ArchiveName=archive_name
+            )
+            return resp
+
+        except Exception as e:
+            logging.debug(e)
+            return None
+
+    def archive_exists(self, archive_name) -> bool:
+        return self.get_archive(archive_name) is not None
+
     def get_resource_tags(self, resource_arn: str):
         resource_tags = self.eventbridge_client.list_tags_for_resource(
             ResourceARN=resource_arn,
