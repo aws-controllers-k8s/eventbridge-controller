@@ -11,6 +11,8 @@ rules:
   resources:
   - archives
 
+  - endpoints
+
   - eventbuses
 
   - rules
@@ -27,6 +29,7 @@ rules:
   - eventbridge.services.k8s.aws
   resources:
   - archives
+  - endpoints
   - eventbuses
   - rules
   verbs:

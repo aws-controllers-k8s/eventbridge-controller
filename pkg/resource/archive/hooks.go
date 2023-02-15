@@ -61,7 +61,7 @@ func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeededAfter {
 	}
 	status := *r.ko.Status.State
 	msg := fmt.Sprintf(
-		"Archive in '%s' state, cannot be modified.",
+		"Archive is in status %q, cannot be modified.",
 		status,
 	)
 	return ackrequeue.NeededAfter(

@@ -2,9 +2,9 @@ ignore:
   resource_names:
       # - Archive
       # - EventBus
+      # - Endpoint
       - ApiDestination
       - Connection
-      - Endpoint
       - PartnerEventSource
 operations:
   PutRule:
@@ -51,6 +51,57 @@ resources:
         - ValidationError
         - ValidationException
         - InvalidEventPatternException
+  Endpoint:
+    fields:
+      Name:
+        is_immutable: true
+        is_required: true
+      Description:
+        compare:
+          is_ignored: true
+      RoleARN:
+        compare:
+          is_ignored: true
+      ReplicationConfig:
+        compare:
+          is_ignored: true
+      StateReason:
+        is_read_only: true
+        from:
+          operation: DescribeEndpoint
+          path: StateReason
+    tags:
+      ignore: true
+    update_operation:
+      custom_method_name: customUpdateEndpoint
+    hooks:
+      delta_pre_compare:
+        code: customPreCompare(delta, a, b)
+      sdk_create_pre_build_request:
+        template_path: hooks/endpoint/sdk_create_pre_build_request.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/endpoint/sdk_create_post_set_output.go.tpl
+      sdk_delete_pre_build_request:
+        template_path: hooks/endpoint/sdk_delete_pre_build_request.go.tpl
+      sdk_delete_post_request:
+        template_path: hooks/endpoint/sdk_delete_post_request.go.tpl
+    print:
+      add_age_column: true
+      add_synced_column: true
+      additional_columns:
+        - name: ARN
+          json_path: .status.ackResourceMetadata.arn
+          type: string
+        - name: STATE
+          json_path: .status.state
+          type: string
+    exceptions:
+      errors:
+        404:
+          code: ResourceNotFoundException
+      terminal_codes:
+        - ValidationError
+        - ValidationException
   EventBus:
     fields:
       Name:
