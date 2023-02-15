@@ -28,6 +28,12 @@ var (
 	_ = ackv1alpha1.AWSAccountID("")
 )
 
+// Contains details about an API destination.
+type APIDestination struct {
+	CreationTime     *metav1.Time `json:"creationTime,omitempty"`
+	LastModifiedTime *metav1.Time `json:"lastModifiedTime,omitempty"`
+}
+
 // This structure specifies the VPC subnets and security groups for the task,
 // and whether a public IP address is to be used. This structure is relevant
 // only for ECS tasks that use the awsvpc network mode.
@@ -38,8 +44,15 @@ type AWSVPCConfiguration struct {
 }
 
 // An Archive object that contains details about an archive.
-type Archive struct {
-	EventSourceARN *string `json:"eventSourceARN,omitempty"`
+type Archive_SDK struct {
+	ArchiveName    *string      `json:"archiveName,omitempty"`
+	CreationTime   *metav1.Time `json:"creationTime,omitempty"`
+	EventCount     *int64       `json:"eventCount,omitempty"`
+	EventSourceARN *string      `json:"eventSourceARN,omitempty"`
+	RetentionDays  *int64       `json:"retentionDays,omitempty"`
+	SizeBytes      *int64       `json:"sizeBytes,omitempty"`
+	State          *string      `json:"state,omitempty"`
+	StateReason    *string      `json:"stateReason,omitempty"`
 }
 
 // The array properties for the submitted job, such as the size of the array.
@@ -95,6 +108,13 @@ type Condition struct {
 	Value *string `json:"value,omitempty"`
 }
 
+// Contains information about a connection.
+type Connection struct {
+	CreationTime       *metav1.Time `json:"creationTime,omitempty"`
+	LastAuthorizedTime *metav1.Time `json:"lastAuthorizedTime,omitempty"`
+	LastModifiedTime   *metav1.Time `json:"lastModifiedTime,omitempty"`
+}
+
 // Additional parameter included in the body. You can include up to 100 additional
 // body parameters per request. An event payload cannot exceed 64 KB.
 type ConnectionBodyParameter struct {
@@ -143,6 +163,16 @@ type ECSParameters struct {
 	TaskDefinitionARN    *string                `json:"taskDefinitionARN,omitempty"`
 }
 
+// An global endpoint used to improve your application's availability by making
+// it regional-fault tolerant. For more information about global endpoints,
+// see Making applications Regional-fault tolerant with global endpoints and
+// event replication (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-global-endpoints.html)
+// in the Amazon EventBridge User Guide..
+type Endpoint struct {
+	CreationTime     *metav1.Time `json:"creationTime,omitempty"`
+	LastModifiedTime *metav1.Time `json:"lastModifiedTime,omitempty"`
+}
+
 // An event bus receives events from a source and routes them to rules associated
 // with that event bus. Your account's default event bus receives events from
 // Amazon Web Services services. A custom event bus can receive events from
@@ -159,9 +189,11 @@ type EventBus_SDK struct {
 // a partner event bus that matches this event source, that Amazon Web Services
 // account can receive events from the partner's applications or services.
 type EventSource struct {
-	ARN       *string `json:"arn,omitempty"`
-	CreatedBy *string `json:"createdBy,omitempty"`
-	Name      *string `json:"name,omitempty"`
+	ARN            *string      `json:"arn,omitempty"`
+	CreatedBy      *string      `json:"createdBy,omitempty"`
+	CreationTime   *metav1.Time `json:"creationTime,omitempty"`
+	ExpirationTime *metav1.Time `json:"expirationTime,omitempty"`
+	Name           *string      `json:"name,omitempty"`
 }
 
 // These are custom parameter to be used when the target is an API Gateway REST
@@ -203,6 +235,13 @@ type NetworkConfiguration struct {
 type PartnerEventSource struct {
 	ARN  *string `json:"arn,omitempty"`
 	Name *string `json:"name,omitempty"`
+}
+
+// The Amazon Web Services account that a partner event source has been offered
+// to.
+type PartnerEventSourceAccount struct {
+	CreationTime   *metav1.Time `json:"creationTime,omitempty"`
+	ExpirationTime *metav1.Time `json:"expirationTime,omitempty"`
 }
 
 // An object representing a constraint on task placement. To learn more, see
@@ -259,7 +298,12 @@ type RemoveTargetsResultEntry struct {
 
 // A Replay object that contains details about a replay.
 type Replay struct {
-	EventSourceARN *string `json:"eventSourceARN,omitempty"`
+	EventEndTime          *metav1.Time `json:"eventEndTime,omitempty"`
+	EventLastReplayedTime *metav1.Time `json:"eventLastReplayedTime,omitempty"`
+	EventSourceARN        *string      `json:"eventSourceARN,omitempty"`
+	EventStartTime        *metav1.Time `json:"eventStartTime,omitempty"`
+	ReplayEndTime         *metav1.Time `json:"replayEndTime,omitempty"`
+	ReplayStartTime       *metav1.Time `json:"replayStartTime,omitempty"`
 }
 
 // A ReplayDestination object that contains details about a replay.

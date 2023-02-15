@@ -49,6 +49,26 @@ rules:
 - apiGroups:
   - eventbridge.services.k8s.aws
   resources:
+  - archives
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - eventbridge.services.k8s.aws
+  resources:
+  - archives/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - eventbridge.services.k8s.aws
+  resources:
   - eventbuses
   verbs:
   - create

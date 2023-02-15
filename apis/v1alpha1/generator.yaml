@@ -1,10 +1,10 @@
 ignore:
   resource_names:
+      # - Archive
+      # - EventBus
       - ApiDestination
-      - Archive
       - Connection
       - Endpoint
-      # - EventBus
       - PartnerEventSource
 operations:
   PutRule:
@@ -13,6 +13,44 @@ operations:
       - Update
     resource_name: Rule
 resources:
+  Archive:
+    fields:
+      ArchiveName:
+        is_immutable: true
+        is_required: true
+      EventSourceARN:
+        is_immutable: true
+        is_required: true
+        references:
+          resource: EventBus
+          path: Status.ACKResourceMetadata.ARN
+    tags:
+      ignore: true # API does not support tags
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/archive/sdk_create_post_set_output.go.tpl
+      sdk_update_pre_build_request:
+        template_path: hooks/archive/sdk_update_pre_build_request.go.tpl
+      sdk_update_post_build_request:
+        template_path: hooks/archive/sdk_update_post_build_request.go.tpl
+    print:
+      add_age_column: true
+      add_synced_column: true
+      additional_columns:
+        - name: ARN
+          json_path: .status.ackResourceMetadata.arn
+          type: string
+        - name: STATE
+          json_path: .status.state
+          type: string
+    exceptions:
+      errors:
+        404:
+          code: ResourceNotFoundException
+      terminal_codes:
+        - ValidationError
+        - ValidationException
+        - InvalidEventPatternException
   EventBus:
     fields:
       Name:
