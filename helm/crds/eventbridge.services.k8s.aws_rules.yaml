@@ -56,9 +56,9 @@ spec:
                   rule. If you omit this, the default event bus is used.
                 type: string
               eventBusRef:
-                description: 'AWSResourceReferenceWrapper provides a wrapper around
+                description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference type to provide more user friendly syntax
-                  for references using ''from'' field Ex: APIIDRef: from: name: my-api'
+                  for references using 'from' field Ex: APIIDRef: \n from: name: my-api"
                 properties:
                   from:
                     description: AWSResourceReference provides all the values necessary
