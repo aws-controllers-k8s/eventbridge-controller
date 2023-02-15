@@ -269,21 +269,20 @@ func (rm *resourceManager) sdkUpdate(
 		return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
 	}
 	if archiveInTerminalState(latest) {
-		msg := "Archive is in '" + *latest.ko.Status.State + "' status"
+		msg := fmt.Sprintf("Archive is in status %q", *latest.ko.Status.State)
 		ackcondition.SetTerminal(desired, corev1.ConditionTrue, &msg, nil)
 		ackcondition.SetSynced(desired, corev1.ConditionTrue, nil, nil)
 		return desired, nil
 	}
 
 	if archiveCreating(latest) {
-		msg := "Archive is currently being created"
+		msg := fmt.Sprintf("Archive is in status %q", *latest.ko.Status.State)
 		ackcondition.SetSynced(desired, corev1.ConditionFalse, &msg, nil)
 		return desired, requeueWaitUntilCanModify(latest)
 	}
 
 	if !archiveAvailable(latest) {
-		msg := "Archive is not available for modification in '" +
-			*latest.ko.Status.State + "' status"
+		msg := fmt.Sprintf("Archive is not available for modification in status %q", *latest.ko.Status.State)
 		ackcondition.SetSynced(desired, corev1.ConditionFalse, &msg, nil)
 		return desired, requeueWaitUntilCanModify(latest)
 	}
@@ -292,7 +291,6 @@ func (rm *resourceManager) sdkUpdate(
 	if err != nil {
 		return nil, err
 	}
-
 	// we need to explicitly unset nil spec values
 	unsetRemovedSpecFields(desired.ko.Spec, input)
 

@@ -40,6 +40,9 @@ resources:
         - name: ARN
           json_path: .status.ackResourceMetadata.arn
           type: string
+        - name: STATE
+          json_path: .status.state
+          type: string
     exceptions:
       errors:
         404:
