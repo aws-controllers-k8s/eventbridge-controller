@@ -371,8 +371,180 @@ func (rm *resourceManager) sdkUpdate(
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
-) (*resource, error) {
-	return rm.customUpdateEndpoint(ctx, desired, latest, delta)
+) (updated *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.sdkUpdate")
+	defer func() {
+		exit(err)
+	}()
+	if immutableFieldChanges := rm.getImmutableFieldChanges(delta); len(immutableFieldChanges) > 0 {
+		msg := fmt.Sprintf("Immutable Spec fields have been modified: %s", strings.Join(immutableFieldChanges, ","))
+		return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
+	}
+	if err = validateEndpointSpec(delta, desired.ko.Spec); err != nil {
+		return nil, ackerr.NewTerminalError(err)
+	}
+
+	if endpointInMutatingState(latest) {
+		return latest, requeueWaitWhileUpdating
+	}
+
+	input, err := rm.newUpdateRequestPayload(ctx, desired)
+	if err != nil {
+		return nil, err
+	}
+	// we need to explicitly unset nil spec values
+	unsetRemovedSpecFields(delta, desired.ko.Spec, input)
+
+	var resp *svcsdk.UpdateEndpointOutput
+	_ = resp
+	resp, err = rm.sdkapi.UpdateEndpointWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "UpdateEndpoint", err)
+	if err != nil {
+		return nil, err
+	}
+	// Merge in the information we read from the API call above to the copy of
+	// the original Kubernetes object we passed to the function
+	ko := desired.ko.DeepCopy()
+
+	// always requeue with desired state and return immediately due to eventually
+	// consistent API
+	return desired, ackrequeue.NeededAfter(nil, defaultRequeueDelay)
+
+	// TODO (@embano1): we can't tell code-gen to not generate the rest of the code
+
+	if ko.Status.ACKResourceMetadata == nil {
+		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	if resp.Arn != nil {
+		arn := ackv1alpha1.AWSResourceName(*resp.Arn)
+		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
+	if resp.EventBuses != nil {
+		f3 := []*svcapitypes.EndpointEventBus{}
+		for _, f3iter := range resp.EventBuses {
+			f3elem := &svcapitypes.EndpointEventBus{}
+			if f3iter.EventBusArn != nil {
+				f3elem.EventBusARN = f3iter.EventBusArn
+			}
+			f3 = append(f3, f3elem)
+		}
+		ko.Spec.EventBuses = f3
+	} else {
+		ko.Spec.EventBuses = nil
+	}
+	if resp.Name != nil {
+		ko.Spec.Name = resp.Name
+	} else {
+		ko.Spec.Name = nil
+	}
+	if resp.ReplicationConfig != nil {
+		f5 := &svcapitypes.ReplicationConfig{}
+		if resp.ReplicationConfig.State != nil {
+			f5.State = resp.ReplicationConfig.State
+		}
+		ko.Spec.ReplicationConfig = f5
+	} else {
+		ko.Spec.ReplicationConfig = nil
+	}
+	if resp.RoleArn != nil {
+		ko.Spec.RoleARN = resp.RoleArn
+	} else {
+		ko.Spec.RoleARN = nil
+	}
+	if resp.RoutingConfig != nil {
+		f7 := &svcapitypes.RoutingConfig{}
+		if resp.RoutingConfig.FailoverConfig != nil {
+			f7f0 := &svcapitypes.FailoverConfig{}
+			if resp.RoutingConfig.FailoverConfig.Primary != nil {
+				f7f0f0 := &svcapitypes.Primary{}
+				if resp.RoutingConfig.FailoverConfig.Primary.HealthCheck != nil {
+					f7f0f0.HealthCheck = resp.RoutingConfig.FailoverConfig.Primary.HealthCheck
+				}
+				f7f0.Primary = f7f0f0
+			}
+			if resp.RoutingConfig.FailoverConfig.Secondary != nil {
+				f7f0f1 := &svcapitypes.Secondary{}
+				if resp.RoutingConfig.FailoverConfig.Secondary.Route != nil {
+					f7f0f1.Route = resp.RoutingConfig.FailoverConfig.Secondary.Route
+				}
+				f7f0.Secondary = f7f0f1
+			}
+			f7.FailoverConfig = f7f0
+		}
+		ko.Spec.RoutingConfig = f7
+	} else {
+		ko.Spec.RoutingConfig = nil
+	}
+	if resp.State != nil {
+		ko.Status.State = resp.State
+	} else {
+		ko.Status.State = nil
+	}
+
+	rm.setStatusDefaults(ko)
+	return &resource{ko}, nil
+}
+
+// newUpdateRequestPayload returns an SDK-specific struct for the HTTP request
+// payload of the Update API call for the resource
+func (rm *resourceManager) newUpdateRequestPayload(
+	ctx context.Context,
+	r *resource,
+) (*svcsdk.UpdateEndpointInput, error) {
+	res := &svcsdk.UpdateEndpointInput{}
+
+	if r.ko.Spec.Description != nil {
+		res.SetDescription(*r.ko.Spec.Description)
+	}
+	if r.ko.Spec.EventBuses != nil {
+		f1 := []*svcsdk.EndpointEventBus{}
+		for _, f1iter := range r.ko.Spec.EventBuses {
+			f1elem := &svcsdk.EndpointEventBus{}
+			if f1iter.EventBusARN != nil {
+				f1elem.SetEventBusArn(*f1iter.EventBusARN)
+			}
+			f1 = append(f1, f1elem)
+		}
+		res.SetEventBuses(f1)
+	}
+	if r.ko.Spec.Name != nil {
+		res.SetName(*r.ko.Spec.Name)
+	}
+	if r.ko.Spec.ReplicationConfig != nil {
+		f3 := &svcsdk.ReplicationConfig{}
+		if r.ko.Spec.ReplicationConfig.State != nil {
+			f3.SetState(*r.ko.Spec.ReplicationConfig.State)
+		}
+		res.SetReplicationConfig(f3)
+	}
+	if r.ko.Spec.RoleARN != nil {
+		res.SetRoleArn(*r.ko.Spec.RoleARN)
+	}
+	if r.ko.Spec.RoutingConfig != nil {
+		f5 := &svcsdk.RoutingConfig{}
+		if r.ko.Spec.RoutingConfig.FailoverConfig != nil {
+			f5f0 := &svcsdk.FailoverConfig{}
+			if r.ko.Spec.RoutingConfig.FailoverConfig.Primary != nil {
+				f5f0f0 := &svcsdk.Primary{}
+				if r.ko.Spec.RoutingConfig.FailoverConfig.Primary.HealthCheck != nil {
+					f5f0f0.SetHealthCheck(*r.ko.Spec.RoutingConfig.FailoverConfig.Primary.HealthCheck)
+				}
+				f5f0.SetPrimary(f5f0f0)
+			}
+			if r.ko.Spec.RoutingConfig.FailoverConfig.Secondary != nil {
+				f5f0f1 := &svcsdk.Secondary{}
+				if r.ko.Spec.RoutingConfig.FailoverConfig.Secondary.Route != nil {
+					f5f0f1.SetRoute(*r.ko.Spec.RoutingConfig.FailoverConfig.Secondary.Route)
+				}
+				f5f0.SetSecondary(f5f0f1)
+			}
+			f5.SetFailoverConfig(f5f0)
+		}
+		res.SetRoutingConfig(f5)
+	}
+
+	return res, nil
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API

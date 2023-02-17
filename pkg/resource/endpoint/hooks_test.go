@@ -371,3 +371,170 @@ func Test_unsetRemovedSpecFields(t *testing.T) {
 		})
 	}
 }
+
+func Test_customPreCompare(t *testing.T) {
+	aResource := &resource{
+		ko: &v1alpha1.Endpoint{
+			Spec: v1alpha1.EndpointSpec{
+				EventBuses: []*v1alpha1.EndpointEventBus{
+					{EventBusARN: aws.String("arn:bus:1")},
+					{EventBusARN: aws.String("arn:bus:2")},
+				},
+				Name:              aws.String("bus"),
+				ReplicationConfig: &v1alpha1.ReplicationConfig{State: aws.String("ENABLED")},
+				RoleARN:           aws.String("arn:role:1"),
+				RoutingConfig: &v1alpha1.RoutingConfig{
+					FailoverConfig: &v1alpha1.FailoverConfig{
+						Primary:   &v1alpha1.Primary{HealthCheck: aws.String("arn:healthcheck:1")},
+						Secondary: &v1alpha1.Secondary{Route: aws.String("eu-central-1")},
+					},
+				},
+			},
+		},
+	}
+	type args struct {
+		a func() *resource
+		b func() *resource
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantDifferences []string
+	}{
+		{
+			name: "equal resources",
+			args: args{
+				a: func() *resource {
+					return aResource
+				},
+				b: func() *resource {
+					return aResource
+				},
+			},
+			wantDifferences: nil,
+		},
+		{
+			name: "equal resources with nil and empty description",
+			args: args{
+				a: func() *resource {
+					return aResource
+				},
+				b: func() *resource {
+					b := aResource.ko.DeepCopy()
+					b.Spec.Description = aws.String("")
+					return &resource{ko: b}
+				},
+			},
+			wantDifferences: nil,
+		},
+		{
+			name: "equal resources with nil and empty roleARN",
+			args: args{
+				a: func() *resource {
+					a := aResource.ko.DeepCopy()
+					a.Spec.RoleARN = nil
+					return &resource{ko: a}
+				},
+				b: func() *resource {
+					b := aResource.ko.DeepCopy()
+					b.Spec.RoleARN = aws.String("")
+					return &resource{ko: b}
+				},
+			},
+			wantDifferences: nil,
+		},
+		{
+			name: "equal resources with event buses in different order",
+			args: args{
+				a: func() *resource {
+					return aResource
+				},
+				b: func() *resource {
+					b := aResource.ko.DeepCopy()
+					b.Spec.EventBuses = []*v1alpha1.EndpointEventBus{
+						{EventBusARN: aws.String("arn:bus:2")},
+						{EventBusARN: aws.String("arn:bus:1")},
+					}
+					return &resource{ko: b}
+				},
+			},
+			wantDifferences: nil,
+		},
+		{
+			name: "equal resources with ENABLED and nil replication config setting",
+			args: args{
+				a: func() *resource {
+					// we need to manipulate desired because latest always returns a setting
+					a := aResource.ko.DeepCopy()
+					a.Spec.ReplicationConfig.State = nil
+					return &resource{ko: a}
+				},
+				b: func() *resource {
+					return aResource
+				},
+			},
+			wantDifferences: nil,
+		},
+		{
+			name: "different roleARN",
+			args: args{
+				a: func() *resource {
+					return aResource
+				},
+				b: func() *resource {
+					b := aResource.ko.DeepCopy()
+					b.Spec.RoleARN = aws.String("arn:role:2")
+					return &resource{ko: b}
+				},
+			},
+			wantDifferences: []string{"Spec.RoleARN"},
+		},
+		{
+			name: "different event buses",
+			args: args{
+				a: func() *resource {
+					return aResource
+				},
+				b: func() *resource {
+					b := aResource.ko.DeepCopy()
+					b.Spec.EventBuses = []*v1alpha1.EndpointEventBus{
+						{EventBusARN: aws.String("arn:bus:2")},
+						{EventBusARN: aws.String("arn:bus:3")},
+					}
+					return &resource{ko: b}
+				},
+			},
+			wantDifferences: []string{"Spec.EventBuses"},
+		},
+		{
+			name: "different replication configs",
+			args: args{
+				a: func() *resource {
+					return aResource
+				},
+				b: func() *resource {
+					b := aResource.ko.DeepCopy()
+					b.Spec.ReplicationConfig.State = aws.String("DISABLED")
+					return &resource{ko: b}
+				},
+			},
+			wantDifferences: []string{"Spec.ReplicationConfig"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := ackcompare.NewDelta()
+			customPreCompare(d, tt.args.a(), tt.args.b())
+
+			if tt.wantDifferences != nil {
+				for _, path := range tt.wantDifferences {
+					if !d.DifferentAt(path) {
+						t.Errorf("expected difference at %q", path)
+					}
+				}
+			} else {
+				assert.DeepEqual(t, d.Differences, []*ackcompare.Difference{})
+			}
+		})
+	}
+}

@@ -10,8 +10,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/service/eventbridge"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/eventbridge-controller/pkg/tags"
@@ -175,6 +178,14 @@ func customPreCompare(
 
 	if !equalReplicationConfigs(aReplCfg, bReplCfg) {
 		delta.Add("Spec.ReplicationConfig", aReplCfg, bReplCfg)
+	}
+
+	aBusCfg := a.ko.Spec.EventBuses
+	bBusCfg := b.ko.Spec.EventBuses
+
+	sortFn := func(a, b *v1alpha1.EndpointEventBus) bool { return *a.EventBusARN < *b.EventBusARN }
+	if !cmp.Equal(aBusCfg, bBusCfg, cmpopts.SortSlices(sortFn)) {
+		delta.Add("Spec.EventBuses", aReplCfg, bReplCfg)
 	}
 }
 

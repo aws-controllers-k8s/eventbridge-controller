@@ -44,9 +44,6 @@ func newResourceDelta(
 	}
 	customPreCompare(delta, a, b)
 
-	if !reflect.DeepEqual(a.ko.Spec.EventBuses, b.ko.Spec.EventBuses) {
-		delta.Add("Spec.EventBuses", a.ko.Spec.EventBuses, b.ko.Spec.EventBuses)
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
