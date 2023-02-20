@@ -10,11 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/service/eventbridge"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	"golang.org/x/exp/slices"
 
 	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
-
-	"github.com/google/go-cmp/cmp"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/eventbridge-controller/pkg/tags"
@@ -183,10 +181,18 @@ func customPreCompare(
 	aBusCfg := a.ko.Spec.EventBuses
 	bBusCfg := b.ko.Spec.EventBuses
 
-	sortFn := func(a, b *v1alpha1.EndpointEventBus) bool { return *a.EventBusARN < *b.EventBusARN }
-	if !cmp.Equal(aBusCfg, bBusCfg, cmpopts.SortSlices(sortFn)) {
+	if !equalEventBusConfigs(aBusCfg, bBusCfg) {
 		delta.Add("Spec.EventBuses", aReplCfg, bReplCfg)
 	}
+}
+
+func equalEventBusConfigs(a, b []*v1alpha1.EndpointEventBus) bool {
+	sortFn := func(a, b *v1alpha1.EndpointEventBus) bool { return *a.EventBusARN < *b.EventBusARN }
+	slices.SortFunc(a, sortFn)
+	slices.SortFunc(b, sortFn)
+
+	equalFn := func(a, b *v1alpha1.EndpointEventBus) bool { return *a.EventBusARN == *b.EventBusARN }
+	return slices.EqualFunc(a, b, equalFn)
 }
 
 func equalReplicationConfigs(a, b *v1alpha1.ReplicationConfig) bool {
