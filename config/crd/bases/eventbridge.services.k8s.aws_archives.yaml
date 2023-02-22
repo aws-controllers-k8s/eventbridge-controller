@@ -50,9 +50,6 @@ spec:
             description: "ArchiveSpec defines the desired state of Archive. \n An
               Archive object that contains details about an archive."
             properties:
-              archiveName:
-                description: The name for the archive to create.
-                type: string
               description:
                 description: A description for the archive.
                 type: string
@@ -76,13 +73,16 @@ spec:
                         type: string
                     type: object
                 type: object
+              name:
+                description: The name for the archive to create.
+                type: string
               retentionDays:
                 description: The number of days to retain events for. Default value
                   is 0. If set to 0, events are retained indefinitely
                 format: int64
                 type: integer
             required:
-            - archiveName
+            - name
             type: object
           status:
             description: ArchiveStatus defines the observed state of Archive

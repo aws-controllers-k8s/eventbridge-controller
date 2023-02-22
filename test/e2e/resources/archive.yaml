@@ -3,5 +3,5 @@ kind: Archive
 metadata:
   name: $ARCHIVE_NAME
 spec:
-  archiveName: $ARCHIVE_NAME
+  name: $ARCHIVE_NAME
   eventSourceARN: $EVENT_SOURCE_ARN

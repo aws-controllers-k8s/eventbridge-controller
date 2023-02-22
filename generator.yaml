@@ -15,7 +15,7 @@ operations:
 resources:
   Archive:
     fields:
-      ArchiveName:
+      Name:
         is_immutable: true
         is_required: true
       EventSourceARN:
@@ -24,6 +24,20 @@ resources:
         references:
           resource: EventBus
           path: Status.ACKResourceMetadata.ARN
+    renames:
+      operations:
+        CreateArchive:
+          input_fields:
+            ArchiveName: Name
+        DescribeArchive:
+          input_fields:
+            ArchiveName: Name
+        DeleteArchive:
+          input_fields:
+            ArchiveName: Name
+        UpdateArchive:
+          input_fields:
+            ArchiveName: Name
     tags:
       ignore: true # API does not support tags
     hooks:

@@ -95,9 +95,9 @@ func (rm *resourceManager) sdkFind(
 		ko.Status.ACKResourceMetadata.ARN = &arn
 	}
 	if resp.ArchiveName != nil {
-		ko.Spec.ArchiveName = resp.ArchiveName
+		ko.Spec.Name = resp.ArchiveName
 	} else {
-		ko.Spec.ArchiveName = nil
+		ko.Spec.Name = nil
 	}
 	if resp.CreationTime != nil {
 		ko.Status.CreationTime = &metav1.Time{*resp.CreationTime}
@@ -145,7 +145,7 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadOneInput(
 	r *resource,
 ) bool {
-	return r.ko.Spec.ArchiveName == nil
+	return r.ko.Spec.Name == nil
 
 }
 
@@ -156,8 +156,8 @@ func (rm *resourceManager) newDescribeRequestPayload(
 ) (*svcsdk.DescribeArchiveInput, error) {
 	res := &svcsdk.DescribeArchiveInput{}
 
-	if r.ko.Spec.ArchiveName != nil {
-		res.SetArchiveName(*r.ko.Spec.ArchiveName)
+	if r.ko.Spec.Name != nil {
+		res.SetArchiveName(*r.ko.Spec.Name)
 	}
 
 	return res, nil
@@ -232,8 +232,8 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreateArchiveInput, error) {
 	res := &svcsdk.CreateArchiveInput{}
 
-	if r.ko.Spec.ArchiveName != nil {
-		res.SetArchiveName(*r.ko.Spec.ArchiveName)
+	if r.ko.Spec.Name != nil {
+		res.SetArchiveName(*r.ko.Spec.Name)
 	}
 	if r.ko.Spec.Description != nil {
 		res.SetDescription(*r.ko.Spec.Description)
@@ -340,8 +340,8 @@ func (rm *resourceManager) newUpdateRequestPayload(
 ) (*svcsdk.UpdateArchiveInput, error) {
 	res := &svcsdk.UpdateArchiveInput{}
 
-	if r.ko.Spec.ArchiveName != nil {
-		res.SetArchiveName(*r.ko.Spec.ArchiveName)
+	if r.ko.Spec.Name != nil {
+		res.SetArchiveName(*r.ko.Spec.Name)
 	}
 	if r.ko.Spec.Description != nil {
 		res.SetDescription(*r.ko.Spec.Description)
@@ -384,8 +384,8 @@ func (rm *resourceManager) newDeleteRequestPayload(
 ) (*svcsdk.DeleteArchiveInput, error) {
 	res := &svcsdk.DeleteArchiveInput{}
 
-	if r.ko.Spec.ArchiveName != nil {
-		res.SetArchiveName(*r.ko.Spec.ArchiveName)
+	if r.ko.Spec.Name != nil {
+		res.SetArchiveName(*r.ko.Spec.Name)
 	}
 
 	return res, nil
@@ -512,11 +512,11 @@ func (rm *resourceManager) getImmutableFieldChanges(
 	delta *ackcompare.Delta,
 ) []string {
 	var fields []string
-	if delta.DifferentAt("Spec.ArchiveName") {
-		fields = append(fields, "ArchiveName")
-	}
 	if delta.DifferentAt("Spec.EventSourceARN") {
 		fields = append(fields, "EventSourceARN")
+	}
+	if delta.DifferentAt("Spec.Name") {
+		fields = append(fields, "Name")
 	}
 
 	return fields
