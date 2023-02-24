@@ -1,0 +1,10 @@
+apiVersion: eventbridge.services.k8s.aws/v1alpha1
+kind: Endpoint
+metadata:
+  name: $ENDPOINT_NAME
+spec:
+  name: $ENDPOINT_NAME
+  eventBuses:
+  - eventBusARN: $EVENT_BUS_ARN
+  replicationConfig:
+    state: DISABLED

@@ -11,7 +11,7 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-"""Integration tests for the EventBridge Archive API.
+"""Integration tests for the EventBridge Endpoint API.
 """
 
 import pytest
@@ -26,7 +26,7 @@ from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_eventbridge_resourc
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EventBridgeValidator
 
-RESOURCE_PLURAL = "archives"
+RESOURCE_PLURAL = "endpoints"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 UPDATE_WAIT_AFTER_SECONDS = 10
@@ -70,17 +70,17 @@ def event_bus():
             pass
 
 @pytest.fixture(scope="module")
-def archive(event_bus):
-        resource_name = random_suffix_name("ack-test-archive", 24)
+def endpoint(event_bus):
+        resource_name = random_suffix_name("ack-test-endpoint", 24)
         _, eb_cr = event_bus
 
         replacements = REPLACEMENT_VALUES.copy()
-        replacements["ARCHIVE_NAME"] = resource_name
-        replacements["EVENT_SOURCE_ARN"] = eb_cr["status"]["ackResourceMetadata"]["arn"]
+        replacements["ENDPOINT_NAME"] = resource_name
+        replacements["EVENT_BUS_ARN"] = eb_cr["status"]["ackResourceMetadata"]["arn"]
 
         # Load EventBus CR
         resource_data = load_eventbridge_resource(
-            "archive",
+            "endpoint",
             additional_replacements=replacements,
         )
         logging.debug(resource_data)
@@ -111,16 +111,16 @@ def archive(event_bus):
 
 @service_marker
 @pytest.mark.canary
-class TestArchive:
-    def test_crud(self, eventbridge_client, archive):
-        (ref, cr) = archive
-        archive_name = cr["spec"]["archiveName"]
+class TestEvenpoint:
+    def test_crud(self, eventbridge_client, endpoint):
+        (ref, cr) = endpoint
+        endpoint_name = cr["spec"]["endpointName"]
 
-        # Check archive exists
+        # Check endpoint exists
         eventbridge_validator = EventBridgeValidator(eventbridge_client)
-        assert eventbridge_validator.archive_exists(archive_name)
+        assert eventbridge_validator.endpoint_exists(endpoint_name)
 
-        new_description = "new archive description"
+        new_description = "new endpoint description"
         cr["spec"]["description"] =  new_description
 
         # Patch k8s resource
@@ -128,8 +128,8 @@ class TestArchive:
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
         # Check description new value
-        archive = eventbridge_validator.get_archive(archive_name)
-        assert archive["Description"] == new_description
+        endpoint = eventbridge_validator.get_endpoint(endpoint_name)
+        assert endpoint["Description"] == new_description
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
@@ -137,5 +137,5 @@ class TestArchive:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check archive doesn't exist
-        assert not eventbridge_validator.archive_exists(archive_name)
+        # Check endpoint doesn't exist
+        assert not eventbridge_validator.endpoint_exists(endpoint_name)
