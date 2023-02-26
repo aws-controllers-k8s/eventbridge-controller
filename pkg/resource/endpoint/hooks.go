@@ -24,7 +24,7 @@ const (
 
 var (
 	requeueWaitWhileCreating = ackrequeue.NeededAfter(
-		fmt.Errorf("endpoint in status %q, requeing", svcsdk.EndpointStateCreating),
+		fmt.Errorf("endpoint in status %q, requeueing", svcsdk.EndpointStateCreating),
 		defaultRequeueDelay,
 	)
 
