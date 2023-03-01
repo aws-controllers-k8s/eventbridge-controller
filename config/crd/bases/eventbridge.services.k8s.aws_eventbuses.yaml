@@ -21,6 +21,7 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .status.ackResourceMetadata.arn
       name: ARN
+      priority: 1
       type: string
     - jsonPath: .status.conditions[?(@.type=="ACK.ResourceSynced")].status
       name: Synced

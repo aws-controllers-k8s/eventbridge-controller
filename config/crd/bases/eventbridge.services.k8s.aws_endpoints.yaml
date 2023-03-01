@@ -18,6 +18,7 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .status.ackResourceMetadata.arn
       name: ARN
+      priority: 1
       type: string
     - jsonPath: .status.state
       name: STATE
