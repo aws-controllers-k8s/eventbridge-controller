@@ -1,8 +1,8 @@
 service:
   full_name: "Amazon EventBridge"
   short_name: "EventBridge"
-  link: https://aws.amazon.com/eventbridge/"
-  documentation: https://docs.aws.amazon.com/eventbridge/latest/APIReference/Welcome.html"
+  link: "https://aws.amazon.com/eventbridge/"
+  documentation: "https://docs.aws.amazon.com/eventbridge/latest/APIReference/Welcome.html"
 api_versions:
   - api_version: v1alpha1
     status: available
