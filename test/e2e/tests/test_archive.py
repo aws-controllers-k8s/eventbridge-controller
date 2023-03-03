@@ -114,7 +114,7 @@ def archive(event_bus):
 class TestArchive:
     def test_crud(self, eventbridge_client, archive):
         (ref, cr) = archive
-        archive_name = cr["spec"]["archiveName"]
+        archive_name = cr["spec"]["name"]
 
         # Check archive exists
         eventbridge_validator = EventBridgeValidator(eventbridge_client)

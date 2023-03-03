@@ -43,13 +43,6 @@ func newResourceDelta(
 		return delta
 	}
 
-	if ackcompare.HasNilDifference(a.ko.Spec.ArchiveName, b.ko.Spec.ArchiveName) {
-		delta.Add("Spec.ArchiveName", a.ko.Spec.ArchiveName, b.ko.Spec.ArchiveName)
-	} else if a.ko.Spec.ArchiveName != nil && b.ko.Spec.ArchiveName != nil {
-		if *a.ko.Spec.ArchiveName != *b.ko.Spec.ArchiveName {
-			delta.Add("Spec.ArchiveName", a.ko.Spec.ArchiveName, b.ko.Spec.ArchiveName)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Description, b.ko.Spec.Description) {
 		delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
 	} else if a.ko.Spec.Description != nil && b.ko.Spec.Description != nil {
@@ -73,6 +66,13 @@ func newResourceDelta(
 	}
 	if !reflect.DeepEqual(a.ko.Spec.EventSourceRef, b.ko.Spec.EventSourceRef) {
 		delta.Add("Spec.EventSourceRef", a.ko.Spec.EventSourceRef, b.ko.Spec.EventSourceRef)
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
+		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+		if *a.ko.Spec.Name != *b.ko.Spec.Name {
+			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.RetentionDays, b.ko.Spec.RetentionDays) {
 		delta.Add("Spec.RetentionDays", a.ko.Spec.RetentionDays, b.ko.Spec.RetentionDays)

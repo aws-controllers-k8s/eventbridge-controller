@@ -25,9 +25,6 @@ import (
 // An Archive object that contains details about an archive.
 type ArchiveSpec struct {
 
-	// The name for the archive to create.
-	// +kubebuilder:validation:Required
-	ArchiveName *string `json:"archiveName"`
 	// A description for the archive.
 	Description *string `json:"description,omitempty"`
 	// An event pattern to use to filter events sent to the archive.
@@ -35,6 +32,9 @@ type ArchiveSpec struct {
 	// The ARN of the event bus that sends events to the archive.
 	EventSourceARN *string                                  `json:"eventSourceARN,omitempty"`
 	EventSourceRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"eventSourceRef,omitempty"`
+	// The name for the archive to create.
+	// +kubebuilder:validation:Required
+	Name *string `json:"name"`
 	// The number of days to retain events for. Default value is 0. If set to 0,
 	// events are retained indefinitely
 	RetentionDays *int64 `json:"retentionDays,omitempty"`
