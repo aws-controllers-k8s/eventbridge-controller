@@ -163,14 +163,32 @@ type ECSParameters struct {
 	TaskDefinitionARN    *string                `json:"taskDefinitionARN,omitempty"`
 }
 
+// The event buses the endpoint is associated with.
+type EndpointEventBus struct {
+	EventBusARN *string `json:"eventBusARN,omitempty"`
+}
+
 // An global endpoint used to improve your application's availability by making
 // it regional-fault tolerant. For more information about global endpoints,
 // see Making applications Regional-fault tolerant with global endpoints and
 // event replication (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-global-endpoints.html)
 // in the Amazon EventBridge User Guide..
-type Endpoint struct {
-	CreationTime     *metav1.Time `json:"creationTime,omitempty"`
-	LastModifiedTime *metav1.Time `json:"lastModifiedTime,omitempty"`
+type Endpoint_SDK struct {
+	ARN              *string             `json:"arn,omitempty"`
+	CreationTime     *metav1.Time        `json:"creationTime,omitempty"`
+	Description      *string             `json:"description,omitempty"`
+	EndpointID       *string             `json:"endpointID,omitempty"`
+	EndpointURL      *string             `json:"endpointURL,omitempty"`
+	EventBuses       []*EndpointEventBus `json:"eventBuses,omitempty"`
+	LastModifiedTime *metav1.Time        `json:"lastModifiedTime,omitempty"`
+	Name             *string             `json:"name,omitempty"`
+	// Endpoints can replicate all events to the secondary Region.
+	ReplicationConfig *ReplicationConfig `json:"replicationConfig,omitempty"`
+	RoleARN           *string            `json:"roleARN,omitempty"`
+	// The routing configuration of the endpoint.
+	RoutingConfig *RoutingConfig `json:"routingConfig,omitempty"`
+	State         *string        `json:"state,omitempty"`
+	StateReason   *string        `json:"stateReason,omitempty"`
 }
 
 // An event bus receives events from a source and routes them to rules associated
@@ -194,6 +212,16 @@ type EventSource struct {
 	CreationTime   *metav1.Time `json:"creationTime,omitempty"`
 	ExpirationTime *metav1.Time `json:"expirationTime,omitempty"`
 	Name           *string      `json:"name,omitempty"`
+}
+
+// The failover configuration for an endpoint. This includes what triggers failover
+// and what happens when it's triggered.
+type FailoverConfig struct {
+	// The primary Region of the endpoint.
+	Primary *Primary `json:"primary,omitempty"`
+	// The secondary Region that processes events when failover is triggered or
+	// replication is enabled.
+	Secondary *Secondary `json:"secondary,omitempty"`
 }
 
 // These are custom parameter to be used when the target is an API Gateway REST
@@ -260,6 +288,11 @@ type PlacementStrategy struct {
 	Type  *string `json:"type_,omitempty"`
 }
 
+// The primary Region of the endpoint.
+type Primary struct {
+	HealthCheck *string `json:"healthCheck,omitempty"`
+}
+
 // Represents an event to be submitted.
 type PutEventsRequestEntry struct {
 	Detail     *string `json:"detail,omitempty"`
@@ -311,10 +344,22 @@ type ReplayDestination struct {
 	ARN *string `json:"arn,omitempty"`
 }
 
+// Endpoints can replicate all events to the secondary Region.
+type ReplicationConfig struct {
+	State *string `json:"state,omitempty"`
+}
+
 // A RetryPolicy object that includes information about the retry policy settings.
 type RetryPolicy struct {
 	MaximumEventAgeInSeconds *int64 `json:"maximumEventAgeInSeconds,omitempty"`
 	MaximumRetryAttempts     *int64 `json:"maximumRetryAttempts,omitempty"`
+}
+
+// The routing configuration of the endpoint.
+type RoutingConfig struct {
+	// The failover configuration for an endpoint. This includes what triggers failover
+	// and what happens when it's triggered.
+	FailoverConfig *FailoverConfig `json:"failoverConfig,omitempty"`
 }
 
 // Contains information about a rule in Amazon EventBridge.
@@ -361,6 +406,12 @@ type SageMakerPipelineParameter struct {
 // Pipeline that starts based on EventBridge events.
 type SageMakerPipelineParameters struct {
 	PipelineParameterList []*SageMakerPipelineParameter `json:"pipelineParameterList,omitempty"`
+}
+
+// The secondary Region that processes events when failover is triggered or
+// replication is enabled.
+type Secondary struct {
+	Route *string `json:"route,omitempty"`
 }
 
 // A key-value pair associated with an Amazon Web Services resource. In EventBridge,

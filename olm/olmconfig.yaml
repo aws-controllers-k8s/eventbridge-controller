@@ -29,6 +29,10 @@ samples:
   spec: '{}'
 - kind: Rule
   spec: '{}'
+- kind: Archive
+  spec: '{}'
+- kind: Endpoint
+  spec: '{}'
 maintainers:
 - name: "eventbridge maintainer team"
   email: "ack-maintainers@amazon.com"

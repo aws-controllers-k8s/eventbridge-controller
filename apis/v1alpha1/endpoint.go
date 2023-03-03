@@ -20,41 +20,36 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// RuleSpec defines the desired state of Rule.
+// EndpointSpec defines the desired state of Endpoint.
 //
-// Contains information about a rule in Amazon EventBridge.
-type RuleSpec struct {
+// An global endpoint used to improve your application's availability by making
+// it regional-fault tolerant. For more information about global endpoints,
+// see Making applications Regional-fault tolerant with global endpoints and
+// event replication (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-global-endpoints.html)
+// in the Amazon EventBridge User Guide..
+type EndpointSpec struct {
 
-	// A description of the rule.
+	// A description of the global endpoint.
 	Description *string `json:"description,omitempty"`
-	// The name or ARN of the event bus to associate with this rule. If you omit
-	// this, the default event bus is used.
-	EventBusName *string                                  `json:"eventBusName,omitempty"`
-	EventBusRef  *ackv1alpha1.AWSResourceReferenceWrapper `json:"eventBusRef,omitempty"`
-	// The event pattern. For more information, see EventBridge event patterns (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html.html)
-	// in the Amazon EventBridge User Guide.
-	EventPattern *string `json:"eventPattern,omitempty"`
-	// The name of the rule that you are creating or updating.
+	// Define the event buses used.
+	//
+	// The names of the event buses must be identical in each Region.
+	// +kubebuilder:validation:Required
+	EventBuses []*EndpointEventBus `json:"eventBuses"`
+	// The name of the global endpoint. For example, "Name":"us-east-2-custom_bus_A-endpoint".
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
-	// The Amazon Resource Name (ARN) of the IAM role associated with the rule.
-	//
-	// If you're setting an event bus in another account as the target and that
-	// account granted permission to your account through an organization instead
-	// of directly by the account ID, you must specify a RoleArn with proper permissions
-	// in the Target structure, instead of here in this parameter.
+	// Enable or disable event replication.
+	ReplicationConfig *ReplicationConfig `json:"replicationConfig,omitempty"`
+	// The ARN of the role used for replication.
 	RoleARN *string `json:"roleARN,omitempty"`
-	// The scheduling expression. For example, "cron(0 20 * * ? *)" or "rate(5 minutes)".
-	ScheduleExpression *string `json:"scheduleExpression,omitempty"`
-	// Indicates whether the rule is enabled or disabled.
-	State *string `json:"state,omitempty"`
-	// The list of key-value pairs to associate with the rule.
-	Tags    []*Tag    `json:"tags,omitempty"`
-	Targets []*Target `json:"targets,omitempty"`
+	// Configure the routing policy, including the health check and secondary Region..
+	// +kubebuilder:validation:Required
+	RoutingConfig *RoutingConfig `json:"routingConfig"`
 }
 
-// RuleStatus defines the observed state of Rule
-type RuleStatus struct {
+// EndpointStatus defines the observed state of Endpoint
+type EndpointStatus struct {
 	// All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
 	// that is used to contain resource sync state, account ownership,
 	// constructed ARN for the resource
@@ -66,30 +61,37 @@ type RuleStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
+	// The state of the endpoint that was created by this request.
+	// +kubebuilder:validation:Optional
+	State *string `json:"state,omitempty"`
+	// The reason the endpoint you asked for information about is in its current
+	// state.
+	// +kubebuilder:validation:Optional
+	StateReason *string `json:"stateReason,omitempty"`
 }
 
-// Rule is the Schema for the Rules API
+// Endpoint is the Schema for the Endpoints API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="ARN",type=string,priority=1,JSONPath=`.status.ackResourceMetadata.arn`
+// +kubebuilder:printcolumn:name="STATE",type=string,priority=0,JSONPath=`.status.state`
 // +kubebuilder:printcolumn:name="Synced",type="string",priority=0,JSONPath=".status.conditions[?(@.type==\"ACK.ResourceSynced\")].status"
 // +kubebuilder:printcolumn:name="Age",type="date",priority=0,JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:resource:shortName=er
-type Rule struct {
+type Endpoint struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              RuleSpec   `json:"spec,omitempty"`
-	Status            RuleStatus `json:"status,omitempty"`
+	Spec              EndpointSpec   `json:"spec,omitempty"`
+	Status            EndpointStatus `json:"status,omitempty"`
 }
 
-// RuleList contains a list of Rule
+// EndpointList contains a list of Endpoint
 // +kubebuilder:object:root=true
-type RuleList struct {
+type EndpointList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Rule `json:"items"`
+	Items           []Endpoint `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Rule{}, &RuleList{})
+	SchemeBuilder.Register(&Endpoint{}, &EndpointList{})
 }

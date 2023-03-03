@@ -16,6 +16,7 @@ import logging
 
 from acktest.bootstrapping import Resources, BootstrapFailureException
 from acktest.bootstrapping.sqs import Queue
+from acktest.bootstrapping.route53 import HealthCheck
 
 from e2e import bootstrap_directory
 from e2e.bootstrap_resources import BootstrapResources
@@ -27,6 +28,20 @@ def service_bootstrap() -> Resources:
         TargetQueue=Queue(
             "ack-eventbridge-controller-queue"
         ),
+        EndpointHealthCheck=HealthCheck(
+            caller_reference_prefix="ack-eb",
+            health_check_config={
+                "Type":"HTTPS",
+                "Disabled":                 False,
+                "EnableSNI":                True,
+                "FailureThreshold":         3,
+                "FullyQualifiedDomainName": "events.eu-west-1.amazonaws.com",
+                "Inverted":                 False,
+                "MeasureLatency":           False,
+                "Port":                     443,
+                "RequestInterval":          10,
+            },
+        )
     )
 
     try:

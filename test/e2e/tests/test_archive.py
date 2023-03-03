@@ -111,7 +111,7 @@ def archive(event_bus):
 
 @service_marker
 @pytest.mark.canary
-class TestEventBus:
+class TestArchive:
     def test_crud(self, eventbridge_client, archive):
         (ref, cr) = archive
         archive_name = cr["spec"]["archiveName"]

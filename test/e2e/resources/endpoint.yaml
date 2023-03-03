@@ -1,0 +1,17 @@
+apiVersion: eventbridge.services.k8s.aws/v1alpha1
+kind: Endpoint
+metadata:
+  name: $ENDPOINT_NAME
+spec:
+  name: $ENDPOINT_NAME
+  eventBuses:
+  - eventBusARN: $EVENT_BUS_ARN_A
+  - eventBusARN: $EVENT_BUS_ARN_B
+  routingConfig:
+    failoverConfig:
+      primary:
+        healthCheck: $HEALTH_CHECK_LOCATION
+      secondary:
+        route: us-west-1
+  replicationConfig:
+    state: DISABLED

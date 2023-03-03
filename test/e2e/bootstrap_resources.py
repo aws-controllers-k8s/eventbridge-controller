@@ -19,12 +19,14 @@ from dataclasses import dataclass
 
 from acktest.bootstrapping import Resources
 from acktest.bootstrapping.sqs import Queue
+from acktest.bootstrapping.route53 import HealthCheck
 
 from e2e import bootstrap_directory
 
 @dataclass
 class BootstrapResources(Resources):
     TargetQueue: Queue
+    EndpointHealthCheck: HealthCheck
 
 _bootstrap_resources = None
 
