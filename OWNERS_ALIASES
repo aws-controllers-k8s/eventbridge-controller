@@ -1,8 +1,9 @@
 # See the OWNERS docs at https://go.k8s.io/owners#owners_aliases
 
 aliases:
+  #emeritus_approvers:
+  #  - jaypipes
   core-ack-team:
-    - jaypipes
     - a-hilaly
     - RedbackThomson
     - vijtrip2
