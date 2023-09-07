@@ -1,0 +1,14 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: ack-system
+  name: eventbridge-leader-election-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: eventbridge-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: ack-eventbridge-controller
+  namespace: ack-system
