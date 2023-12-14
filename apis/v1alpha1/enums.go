@@ -150,6 +150,7 @@ const (
 type RuleState string
 
 const (
-	RuleState_ENABLED  RuleState = "ENABLED"
-	RuleState_DISABLED RuleState = "DISABLED"
+	RuleState_ENABLED                                       RuleState = "ENABLED"
+	RuleState_DISABLED                                      RuleState = "DISABLED"
+	RuleState_ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS RuleState = "ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS"
 )

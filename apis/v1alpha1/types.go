@@ -120,22 +120,19 @@ type Connection struct {
 type ConnectionBodyParameter struct {
 	IsValueSecret *bool   `json:"isValueSecret,omitempty"`
 	Key           *string `json:"key,omitempty"`
-	Value         *string `json:"value,omitempty"`
 }
 
 // Additional parameter included in the header. You can include up to 100 additional
 // header parameters per request. An event payload cannot exceed 64 KB.
 type ConnectionHeaderParameter struct {
-	IsValueSecret *bool   `json:"isValueSecret,omitempty"`
-	Value         *string `json:"value,omitempty"`
+	IsValueSecret *bool `json:"isValueSecret,omitempty"`
 }
 
 // Additional query string parameter for the connection. You can include up
 // to 100 additional query string parameters per request. Each additional parameter
 // counts towards the event payload size, which cannot exceed 64 KB.
 type ConnectionQueryStringParameter struct {
-	IsValueSecret *bool   `json:"isValueSecret,omitempty"`
-	Value         *string `json:"value,omitempty"`
+	IsValueSecret *bool `json:"isValueSecret,omitempty"`
 }
 
 // A DeadLetterConfig object that contains information about a dead-letter queue
@@ -168,11 +165,11 @@ type EndpointEventBus struct {
 	EventBusARN *string `json:"eventBusARN,omitempty"`
 }
 
-// An global endpoint used to improve your application's availability by making
+// A global endpoint used to improve your application's availability by making
 // it regional-fault tolerant. For more information about global endpoints,
 // see Making applications Regional-fault tolerant with global endpoints and
 // event replication (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-global-endpoints.html)
-// in the Amazon EventBridge User Guide..
+// in the Amazon EventBridge User Guide.
 type Endpoint_SDK struct {
 	ARN              *string             `json:"arn,omitempty"`
 	CreationTime     *metav1.Time        `json:"creationTime,omitempty"`
@@ -191,12 +188,13 @@ type Endpoint_SDK struct {
 	StateReason   *string        `json:"stateReason,omitempty"`
 }
 
-// An event bus receives events from a source and routes them to rules associated
-// with that event bus. Your account's default event bus receives events from
-// Amazon Web Services services. A custom event bus can receive events from
-// your custom applications and services. A partner event bus receives events
-// from an event source created by an SaaS partner. These events come from the
-// partners services or applications.
+// An event bus receives events from a source, uses rules to evaluate them,
+// applies any configured input transformation, and routes them to the appropriate
+// target(s). Your account's default event bus receives events from Amazon Web
+// Services services. A custom event bus can receive events from your custom
+// applications and services. A partner event bus receives events from an event
+// source created by an SaaS partner. These events come from the partners services
+// or applications.
 type EventBus_SDK struct {
 	ARN    *string `json:"arn,omitempty"`
 	Name   *string `json:"name,omitempty"`
@@ -224,10 +222,10 @@ type FailoverConfig struct {
 	Secondary *Secondary `json:"secondary,omitempty"`
 }
 
-// These are custom parameter to be used when the target is an API Gateway REST
-// APIs or EventBridge ApiDestinations. In the latter case, these are merged
-// with any InvocationParameters specified on the Connection, with any values
-// from the Connection taking precedence.
+// These are custom parameter to be used when the target is an API Gateway APIs
+// or EventBridge ApiDestinations. In the latter case, these are merged with
+// any InvocationParameters specified on the Connection, with any values from
+// the Connection taking precedence.
 type HTTPParameters struct {
 	HeaderParameters      map[string]*string `json:"headerParameters,omitempty"`
 	PathParameterValues   []*string          `json:"pathParameterValues,omitempty"`
@@ -316,12 +314,19 @@ type PutTargetsResultEntry struct {
 // cluster to invoke the Amazon Redshift Data API ExecuteStatement based on
 // EventBridge events.
 type RedshiftDataParameters struct {
-	Database         *string `json:"database,omitempty"`
-	DBUser           *string `json:"dbUser,omitempty"`
+	// Redshift Database
+	Database *string `json:"database,omitempty"`
+	// Database user name
+	DBUser *string `json:"dbUser,omitempty"`
+	// Optional SecretManager ARN which stores the database credentials
 	SecretManagerARN *string `json:"secretManagerARN,omitempty"`
-	SQL              *string `json:"sql,omitempty"`
-	StatementName    *string `json:"statementName,omitempty"`
-	WithEvent        *bool   `json:"withEvent,omitempty"`
+	// A single Redshift SQL
+	SQL *string `json:"sql,omitempty"`
+	// A list of SQLs.
+	SQLs []*string `json:"sqls,omitempty"`
+	// A name for Redshift DataAPI statement which can be used as filter of ListStatement.
+	StatementName *string `json:"statementName,omitempty"`
+	WithEvent     *bool   `json:"withEvent,omitempty"`
 }
 
 // Represents a target that failed to be removed from a rule.
@@ -440,10 +445,10 @@ type Target struct {
 	DeadLetterConfig *DeadLetterConfig `json:"deadLetterConfig,omitempty"`
 	// The custom parameters to be used when the target is an Amazon ECS task.
 	ECSParameters *ECSParameters `json:"ecsParameters,omitempty"`
-	// These are custom parameter to be used when the target is an API Gateway REST
-	// APIs or EventBridge ApiDestinations. In the latter case, these are merged
-	// with any InvocationParameters specified on the Connection, with any values
-	// from the Connection taking precedence.
+	// These are custom parameter to be used when the target is an API Gateway APIs
+	// or EventBridge ApiDestinations. In the latter case, these are merged with
+	// any InvocationParameters specified on the Connection, with any values from
+	// the Connection taking precedence.
 	HTTPParameters *HTTPParameters `json:"httpParameters,omitempty"`
 	ID             *string         `json:"id,omitempty"`
 	Input          *string         `json:"input,omitempty"`
