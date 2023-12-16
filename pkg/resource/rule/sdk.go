@@ -800,6 +800,15 @@ func sdkTargetsFromResourceTargets(
 			if krTarget.RedshiftDataParameters.SQL != nil {
 				tf10.SetSql(*krTarget.RedshiftDataParameters.SQL)
 			}
+			if krTarget.RedshiftDataParameters.SQLs != nil {
+				tf10f4 := []*string{}
+				for _, tf10f4iter := range krTarget.RedshiftDataParameters.SQLs {
+					var tf10f4elem string
+					tf10f4elem = *tf10f4iter
+					tf10f4 = append(tf10f4, &tf10f4elem)
+				}
+				tf10.SetSqls(tf10f4)
+			}
 			if krTarget.RedshiftDataParameters.StatementName != nil {
 				tf10.SetStatementName(*krTarget.RedshiftDataParameters.StatementName)
 			}
@@ -1113,6 +1122,15 @@ func resourceTargetsFromSDKTargets(
 			}
 			if sdkTarget.RedshiftDataParameters.Sql != nil {
 				tf10.SQL = sdkTarget.RedshiftDataParameters.Sql
+			}
+			if sdkTarget.RedshiftDataParameters.Sqls != nil {
+				tf10f4 := []*string{}
+				for _, tf10f4iter := range sdkTarget.RedshiftDataParameters.Sqls {
+					var tf10f4elem string
+					tf10f4elem = *tf10f4iter
+					tf10f4 = append(tf10f4, &tf10f4elem)
+				}
+				tf10.SQLs = tf10f4
 			}
 			if sdkTarget.RedshiftDataParameters.StatementName != nil {
 				tf10.StatementName = sdkTarget.RedshiftDataParameters.StatementName

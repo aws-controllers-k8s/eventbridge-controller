@@ -22,11 +22,11 @@ import (
 
 // EndpointSpec defines the desired state of Endpoint.
 //
-// An global endpoint used to improve your application's availability by making
+// A global endpoint used to improve your application's availability by making
 // it regional-fault tolerant. For more information about global endpoints,
 // see Making applications Regional-fault tolerant with global endpoints and
 // event replication (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-global-endpoints.html)
-// in the Amazon EventBridge User Guide..
+// in the Amazon EventBridge User Guide.
 type EndpointSpec struct {
 
 	// A description of the global endpoint.
@@ -39,7 +39,9 @@ type EndpointSpec struct {
 	// The name of the global endpoint. For example, "Name":"us-east-2-custom_bus_A-endpoint".
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
-	// Enable or disable event replication.
+	// Enable or disable event replication. The default state is ENABLED which means
+	// you must supply a RoleArn. If you don't have a RoleArn or you don't want
+	// event replication enabled, set the state to DISABLED.
 	ReplicationConfig *ReplicationConfig `json:"replicationConfig,omitempty"`
 	// The ARN of the role used for replication.
 	RoleARN *string `json:"roleARN,omitempty"`
