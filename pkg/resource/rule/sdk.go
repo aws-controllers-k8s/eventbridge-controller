@@ -189,6 +189,8 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 
+	unsetScheduleExpression(desired.ko.Spec, input)
+
 	var resp *svcsdk.PutRuleOutput
 	_ = resp
 	resp, err = rm.sdkapi.PutRuleWithContext(ctx, input)
@@ -311,6 +313,8 @@ func (rm *resourceManager) sdkUpdate(
 	if err != nil {
 		return nil, err
 	}
+
+	unsetScheduleExpression(desired.ko.Spec, input)
 
 	var resp *svcsdk.PutRuleOutput
 	_ = resp

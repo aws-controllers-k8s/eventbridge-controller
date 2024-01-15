@@ -82,13 +82,6 @@ func newResourceDelta(
 			delta.Add("Spec.RoleARN", a.ko.Spec.RoleARN, b.ko.Spec.RoleARN)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.ScheduleExpression, b.ko.Spec.ScheduleExpression) {
-		delta.Add("Spec.ScheduleExpression", a.ko.Spec.ScheduleExpression, b.ko.Spec.ScheduleExpression)
-	} else if a.ko.Spec.ScheduleExpression != nil && b.ko.Spec.ScheduleExpression != nil {
-		if *a.ko.Spec.ScheduleExpression != *b.ko.Spec.ScheduleExpression {
-			delta.Add("Spec.ScheduleExpression", a.ko.Spec.ScheduleExpression, b.ko.Spec.ScheduleExpression)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.State, b.ko.Spec.State) {
 		delta.Add("Spec.State", a.ko.Spec.State, b.ko.Spec.State)
 	} else if a.ko.Spec.State != nil && b.ko.Spec.State != nil {

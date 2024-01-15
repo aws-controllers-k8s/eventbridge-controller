@@ -6,6 +6,7 @@ spec:
   name: $RULE_NAME
   eventBusName: $BUS_NAME
   eventPattern: "$EVENT_PATTERN"
+  scheduleExpression: ""
   tags:
   - key: env
     value: testing
