@@ -138,3 +138,79 @@ func Test_validateRuleSpec(t *testing.T) {
 		})
 	}
 }
+
+func Test_equalScheduleExpression(t *testing.T) {
+	var (
+		emptyString = ""
+		someString  = "test-string"
+		otherString = "test-other-string"
+	)
+
+	type args struct {
+		desiredExpression *string
+		latestExpression  *string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "equal: both values are nil",
+			args: args{
+				desiredExpression: nil,
+				latestExpression:  nil,
+			},
+			want: true,
+		}, {
+			name: "equal: desired value is nil, latest is empty string",
+			args: args{
+				desiredExpression: nil,
+				latestExpression:  &emptyString,
+			},
+			want: true,
+		}, {
+			name: "equal: desired value is empty string, latest is nil",
+			args: args{
+				desiredExpression: &emptyString,
+				latestExpression:  nil,
+			},
+			want: true,
+		}, {
+			name: "equal: desired value is empty string, latest is nil",
+			args: args{
+				desiredExpression: &emptyString,
+				latestExpression:  nil,
+			},
+			want: true,
+		}, {
+			name: "not equal: desired value is empty string, latest has value",
+			args: args{
+				desiredExpression: &emptyString,
+				latestExpression:  &someString,
+			},
+			want: false,
+		}, {
+			name: "not equal: desired has value, latest nil",
+			args: args{
+				desiredExpression: &someString,
+				latestExpression:  nil,
+			},
+			want: false,
+		}, {
+			name: "not equal: desired has value, latest has different value",
+			args: args{
+				desiredExpression: &someString,
+				latestExpression:  &otherString,
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := equalScheduleExpression(tt.args.desiredExpression, tt.args.latestExpression); got != tt.want {
+				t.Errorf("equalScheduleExpression() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

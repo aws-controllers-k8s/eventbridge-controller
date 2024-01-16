@@ -133,4 +133,38 @@ func customPreCompare(
 	if !equalTargets(desired.ko.Spec.Targets, latest.ko.Spec.Targets) {
 		delta.Add("Spec.Targets", desired.ko.Spec.Targets, latest.ko.Spec.Targets)
 	}
+
+	// ideally EqualStrings should do but we're missing one case there (see
+	// EqualStrings function comment)
+	desiredExpression := desired.ko.Spec.ScheduleExpression
+	latestExpression := latest.ko.Spec.ScheduleExpression
+	if !equalScheduleExpression(desiredExpression, latestExpression) {
+		delta.Add("Spec.ScheduleExpression", desiredExpression, latestExpression)
+	}
+}
+
+func equalScheduleExpression(desiredExpression *string, latestExpression *string) bool {
+	// fast pass: empty/nil string equality (supersedes HasNilDifference)
+	if pkgtags.EqualZeroString(desiredExpression) && pkgtags.EqualZeroString(latestExpression) {
+		return true
+	}
+
+	if ackcompare.HasNilDifference(desiredExpression, latestExpression) {
+		return false
+	} else if desiredExpression != nil && latestExpression != nil {
+		if *desiredExpression != *latestExpression {
+			return false
+		}
+	}
+
+	return true
+}
+
+// unsetScheduleExpression is a helper function to unset the ScheduleExpression
+// if the spec field value is an empty string
+// @embano1: fixes #aws-controllers-k8s/community/issues/1984
+func unsetScheduleExpression(spec v1alpha1.RuleSpec, input *svcsdk.PutRuleInput) {
+	if pkgtags.EqualZeroString(spec.ScheduleExpression) {
+		input.ScheduleExpression = nil
+	}
 }

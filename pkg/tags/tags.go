@@ -59,6 +59,9 @@ func EqualTags(
 	return len(addedOrUpdated) == 0 && len(removed) == 0
 }
 
+// EqualStrings returns true if two strings are equal e.g., both are nil, one is
+// nil and the other is empty string, or both non-zero strings are equal.
+// TODO (@embano1): needs additional case -> a == "" && b == nil return true
 func EqualStrings(a, b *string) bool {
 	if a == nil {
 		return b == nil || *b == ""
