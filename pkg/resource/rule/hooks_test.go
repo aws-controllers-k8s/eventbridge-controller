@@ -214,3 +214,99 @@ func Test_equalScheduleExpression(t *testing.T) {
 		})
 	}
 }
+
+func Test_equalEventBusName(t *testing.T) {
+	var (
+		defaultEventBusName = "default"
+		emptyString         = ""
+		customEventBusName  = "custom"
+	)
+	type args struct {
+		desiredExpression *string
+		latestExpression  *string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "equal: desired nil, latest default",
+			args: args{
+				desiredExpression: nil,
+				latestExpression:  &defaultEventBusName,
+			},
+			want: true,
+		}, {
+			name: "equal: desired default, latest nil",
+			args: args{
+				desiredExpression: nil,
+				latestExpression:  &defaultEventBusName,
+			},
+			want: true,
+		}, {
+			name: "equal: desired empty string, latest nil",
+			args: args{
+				desiredExpression: &emptyString,
+				latestExpression:  nil,
+			},
+			want: true,
+		}, {
+			name: "equal: desired is default, latest empty string",
+			args: args{
+				desiredExpression: &defaultEventBusName,
+				latestExpression:  &emptyString,
+			},
+			want: true,
+		}, {
+			name: "equal: both nil",
+			args: args{
+				desiredExpression: nil,
+				latestExpression:  nil,
+			},
+			want: true,
+		}, {
+			name: "equal: both same default value",
+			args: args{
+				desiredExpression: &defaultEventBusName,
+				latestExpression:  &defaultEventBusName,
+			},
+			want: true,
+		}, {
+			name: "equal: both same custom value",
+			args: args{
+				desiredExpression: &customEventBusName,
+				latestExpression:  &customEventBusName,
+			},
+			want: true,
+		}, {
+			name: "not equal: desired nil, latest custom value",
+			args: args{
+				desiredExpression: nil,
+				latestExpression:  &customEventBusName,
+			},
+			want: false,
+		}, {
+			name: "not equal: desired default, latest custom value",
+			args: args{
+				desiredExpression: &defaultEventBusName,
+				latestExpression:  &customEventBusName,
+			},
+			want: false,
+		}, {
+			name: "not equal: desired custom value, latest default",
+			args: args{
+				desiredExpression: &defaultEventBusName,
+				latestExpression:  &customEventBusName,
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := equalEventBusName(tt.args.desiredExpression, tt.args.latestExpression); got != tt.want {
+				t.Errorf("equalEventBusName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
