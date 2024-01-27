@@ -141,9 +141,15 @@ func customPreCompare(
 	if !equalScheduleExpression(desiredExpression, latestExpression) {
 		delta.Add("Spec.ScheduleExpression", desiredExpression, latestExpression)
 	}
+
+	desiredBusName := desired.ko.Spec.EventBusName
+	latestBusName := latest.ko.Spec.EventBusName
+	if !equalEventBusName(desiredBusName, latestBusName) {
+		delta.Add("Spec.EventBusName", desiredBusName, latestBusName)
+	}
 }
 
-func equalScheduleExpression(desiredExpression *string, latestExpression *string) bool {
+func equalScheduleExpression(desiredExpression, latestExpression *string) bool {
 	// fast pass: empty/nil string equality (supersedes HasNilDifference)
 	if pkgtags.EqualZeroString(desiredExpression) && pkgtags.EqualZeroString(latestExpression) {
 		return true
@@ -157,6 +163,28 @@ func equalScheduleExpression(desiredExpression *string, latestExpression *string
 		}
 	}
 
+	return true
+}
+
+// equalEventBusName is a helper function comparing the provided event bus
+// names. A "default" and nil value is treated as equal.
+// @embano1: fixes #aws-controllers-k8s/community/issues/1989
+func equalEventBusName(desiredBus, latestBus *string) bool {
+	isDefaultBus := func(name *string) bool {
+		return name == nil || *name == "default" || *name == ""
+	}
+
+	if isDefaultBus(desiredBus) && isDefaultBus(latestBus) {
+		return true
+	}
+
+	if ackcompare.HasNilDifference(desiredBus, latestBus) {
+		return false
+	} else if desiredBus != nil && latestBus != nil {
+		if *desiredBus != *latestBus {
+			return false
+		}
+	}
 	return true
 }
 

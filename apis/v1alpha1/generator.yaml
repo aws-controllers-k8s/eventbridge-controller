@@ -167,6 +167,8 @@ resources:
         references:
           resource: EventBus
           path: Spec.Name
+        compare:
+          is_ignored: true
       scheduleExpression:
         compare:
           is_ignored: true

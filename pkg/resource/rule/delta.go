@@ -51,13 +51,6 @@ func newResourceDelta(
 			delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.EventBusName, b.ko.Spec.EventBusName) {
-		delta.Add("Spec.EventBusName", a.ko.Spec.EventBusName, b.ko.Spec.EventBusName)
-	} else if a.ko.Spec.EventBusName != nil && b.ko.Spec.EventBusName != nil {
-		if *a.ko.Spec.EventBusName != *b.ko.Spec.EventBusName {
-			delta.Add("Spec.EventBusName", a.ko.Spec.EventBusName, b.ko.Spec.EventBusName)
-		}
-	}
 	if !reflect.DeepEqual(a.ko.Spec.EventBusRef, b.ko.Spec.EventBusRef) {
 		delta.Add("Spec.EventBusRef", a.ko.Spec.EventBusRef, b.ko.Spec.EventBusRef)
 	}
