@@ -567,8 +567,8 @@ func (rm *resourceManager) getImmutableFieldChanges(
 	return fields
 }
 
-// sdkTargetsFromResourceTargets converts the given Kubernetes resource targets to AWS service targets
-func sdkTargetsFromResourceTargets(
+// SdkTargetsFromResourceTargets converts the given Kubernetes resource targets to AWS service targets
+func SdkTargetsFromResourceTargets(
 	targets []*svcapitypes.Target,
 ) []*svcsdk.Target {
 	var res []*svcsdk.Target
