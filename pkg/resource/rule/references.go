@@ -56,12 +56,11 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	namespace := res.MetaObject().GetNamespace()
 	ko := rm.concreteResource(res).ko
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if fieldHasReferences, err := rm.resolveReferenceForEventBusName(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForEventBusName(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -87,7 +86,6 @@ func validateReferenceFields(ko *svcapitypes.Rule) error {
 func (rm *resourceManager) resolveReferenceForEventBusName(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.Rule,
 ) (hasReferences bool, err error) {
 	if ko.Spec.EventBusRef != nil && ko.Spec.EventBusRef.From != nil {
@@ -95,6 +93,10 @@ func (rm *resourceManager) resolveReferenceForEventBusName(
 		arr := ko.Spec.EventBusRef.From
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: EventBusRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
 		}
 		obj := &svcapitypes.EventBus{}
 		if err := getReferencedResourceState_EventBus(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
