@@ -55,6 +55,7 @@ rules:
   - ""
   resources:
   - configmaps
+  - secrets
   verbs:
   - get
   - list
@@ -69,77 +70,11 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
   - eventbridge.services.k8s.aws
   resources:
   - archives
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - eventbridge.services.k8s.aws
-  resources:
-  - archives/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - eventbridge.services.k8s.aws
-  resources:
   - endpoints
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - eventbridge.services.k8s.aws
-  resources:
-  - endpoints/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - eventbridge.services.k8s.aws
-  resources:
   - eventbuses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - eventbridge.services.k8s.aws
-  resources:
-  - eventbuses/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - eventbridge.services.k8s.aws
-  resources:
   - rules
   verbs:
   - create
@@ -152,6 +87,9 @@ rules:
 - apiGroups:
   - eventbridge.services.k8s.aws
   resources:
+  - archives/status
+  - endpoints/status
+  - eventbuses/status
   - rules/status
   verbs:
   - get
@@ -161,25 +99,6 @@ rules:
   - services.k8s.aws
   resources:
   - adoptedresources
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - services.k8s.aws
-  resources:
-  - adoptedresources/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - services.k8s.aws
-  resources:
   - fieldexports
   verbs:
   - create
@@ -192,6 +111,7 @@ rules:
 - apiGroups:
   - services.k8s.aws
   resources:
+  - adoptedresources/status
   - fieldexports/status
   verbs:
   - get

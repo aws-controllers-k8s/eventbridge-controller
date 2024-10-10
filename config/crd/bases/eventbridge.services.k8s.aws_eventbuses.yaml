@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: eventbuses.eventbridge.services.k8s.aws
 spec:
   group: eventbridge.services.k8s.aws
@@ -54,7 +54,6 @@ spec:
             description: |-
               EventBusSpec defines the desired state of EventBus.
 
-
               An event bus receives events from a source, uses rules to evaluate them,
               applies any configured input transformation, and routes them to the appropriate
               target(s). Your account's default event bus receives events from Amazon Web
@@ -72,12 +71,10 @@ spec:
                 description: |-
                   The name of the new event bus.
 
-
                   Custom event bus names can't contain the / character, but you can use the
                   / character in partner event bus names. In addition, for partner event buses,
                   the name must exactly match the name of the partner event source that this
                   event bus is matched to.
-
 
                   You can't use the name default for a custom event bus, as this name is already
                   used for your account's default event bus.
@@ -115,7 +112,6 @@ spec:
                       when it has verified that an "adopted" resource (a resource where the
                       ARN annotation was set by the Kubernetes user on the CR) exists and
                       matches the supplied CR's Spec field values.
-                      TODO(vijat@): Find a better strategy for resources that do not have ARN in CreateOutputResponse
                       https://github.com/aws/aws-controllers-k8s/issues/270
                     type: string
                   ownerAccountID:
