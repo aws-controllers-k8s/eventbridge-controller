@@ -1,13 +1,16 @@
 # See the OWNERS docs at https://go.k8s.io/owners#owners_aliases
 
 aliases:
-  #emeritus_approvers:
-  #  - jaypipes
   core-ack-team:
     - a-hilaly
-    - RedbackThomson
-    - vijtrip2
-  service-team:
-    - embano1
-    - baldawar
-    - nikp
+    - jlbutler
+    - michaelhtm
+    - TiberiuGC
+    - rushmash91
+  # emeritus-core-ack-team:
+  #   - jaypipes
+  #   - jljaco
+  #   - mhausenblas
+  #   - RedbackThomson
+  #   - vijtrip2
+  #   - ivelichkovich
