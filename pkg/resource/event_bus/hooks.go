@@ -20,9 +20,9 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	"github.com/aws-controllers-k8s/runtime/pkg/errors"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
-
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 	pkgtags "github.com/aws-controllers-k8s/eventbridge-controller/pkg/tags"
@@ -59,7 +59,7 @@ func (rm *resourceManager) getTags(
 	defer func() { exit(err) }()
 
 	var listTagsResponse *svcsdk.ListTagsForResourceOutput
-	listTagsResponse, err = rm.sdkapi.ListTagsForResourceWithContext(
+	listTagsResponse, err = rm.sdkapi.ListTagsForResource(
 		ctx,
 		&svcsdk.ListTagsForResourceInput{
 			ResourceARN: &resourceARN,
@@ -119,7 +119,7 @@ func (rm *resourceManager) syncTags(
 
 	arn := (*string)(latest.ko.Status.ACKResourceMetadata.ARN)
 	if len(extra) > 0 {
-		_, err = rm.sdkapi.UntagResourceWithContext(
+		_, err = rm.sdkapi.UntagResource(
 			ctx,
 			&svcsdk.UntagResourceInput{
 				ResourceARN: arn,
@@ -133,7 +133,7 @@ func (rm *resourceManager) syncTags(
 	}
 
 	if len(missing) > 0 {
-		_, err = rm.sdkapi.TagResourceWithContext(
+		_, err = rm.sdkapi.TagResource(
 			ctx,
 			&svcsdk.TagResourceInput{
 				ResourceARN: arn,
@@ -149,10 +149,10 @@ func (rm *resourceManager) syncTags(
 }
 
 // sdkTagsFromResourceTags transforms a *svcapitypes.Tag array to a *svcsdk.Tag array.
-func sdkTagsFromResourceTags(rTags []*svcapitypes.Tag) []*svcsdk.Tag {
-	tags := make([]*svcsdk.Tag, len(rTags))
+func sdkTagsFromResourceTags(rTags []*svcapitypes.Tag) []svcsdktypes.Tag {
+	tags := make([]svcsdktypes.Tag, len(rTags))
 	for i := range rTags {
-		tags[i] = &svcsdk.Tag{
+		tags[i] = svcsdktypes.Tag{
 			Key:   rTags[i].Key,
 			Value: rTags[i].Value,
 		}
@@ -161,10 +161,10 @@ func sdkTagsFromResourceTags(rTags []*svcapitypes.Tag) []*svcsdk.Tag {
 }
 
 // sdkTagStringsFromResourceTags transforms a *svcapitypes.Tag array to a string array.
-func sdkTagStringsFromResourceTags(rTags []*svcapitypes.Tag) []*string {
-	tags := make([]*string, len(rTags))
+func sdkTagStringsFromResourceTags(rTags []*svcapitypes.Tag) []string {
+	tags := make([]string, len(rTags))
 	for i := range rTags {
-		tags[i] = rTags[i].Key
+		tags[i] = *rTags[i].Key
 	}
 	return tags
 }

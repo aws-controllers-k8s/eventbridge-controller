@@ -28,8 +28,9 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +41,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EventBridge{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.Endpoint{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +49,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -74,13 +75,11 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	var resp *svcsdk.DescribeEndpointOutput
-	resp, err = rm.sdkapi.DescribeEndpointWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeEndpoint(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "DescribeEndpoint", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ResourceNotFoundException" {
+		var notFound *svcsdktypes.ResourceNotFoundException
+		if errors.As(err, &notFound) {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -122,8 +121,8 @@ func (rm *resourceManager) sdkFind(
 	}
 	if resp.ReplicationConfig != nil {
 		f8 := &svcapitypes.ReplicationConfig{}
-		if resp.ReplicationConfig.State != nil {
-			f8.State = resp.ReplicationConfig.State
+		if resp.ReplicationConfig.State != "" {
+			f8.State = aws.String(string(resp.ReplicationConfig.State))
 		}
 		ko.Spec.ReplicationConfig = f8
 	} else {
@@ -158,8 +157,8 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.RoutingConfig = nil
 	}
-	if resp.State != nil {
-		ko.Status.State = resp.State
+	if resp.State != "" {
+		ko.Status.State = aws.String(string(resp.State))
 	} else {
 		ko.Status.State = nil
 	}
@@ -191,7 +190,7 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.DescribeEndpointInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 
 	return res, nil
@@ -220,7 +219,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateEndpointOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateEndpointWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateEndpoint(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateEndpoint", err)
 	if err != nil {
 		return nil, err
@@ -256,8 +255,8 @@ func (rm *resourceManager) sdkCreate(
 	}
 	if resp.ReplicationConfig != nil {
 		f3 := &svcapitypes.ReplicationConfig{}
-		if resp.ReplicationConfig.State != nil {
-			f3.State = resp.ReplicationConfig.State
+		if resp.ReplicationConfig.State != "" {
+			f3.State = aws.String(string(resp.ReplicationConfig.State))
 		}
 		ko.Spec.ReplicationConfig = f3
 	} else {
@@ -292,8 +291,8 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.RoutingConfig = nil
 	}
-	if resp.State != nil {
-		ko.Status.State = resp.State
+	if resp.State != "" {
+		ko.Status.State = aws.String(string(resp.State))
 	} else {
 		ko.Status.State = nil
 	}
@@ -315,53 +314,53 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateEndpointInput{}
 
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.EventBuses != nil {
-		f1 := []*svcsdk.EndpointEventBus{}
+		f1 := []svcsdktypes.EndpointEventBus{}
 		for _, f1iter := range r.ko.Spec.EventBuses {
-			f1elem := &svcsdk.EndpointEventBus{}
+			f1elem := &svcsdktypes.EndpointEventBus{}
 			if f1iter.EventBusARN != nil {
-				f1elem.SetEventBusArn(*f1iter.EventBusARN)
+				f1elem.EventBusArn = f1iter.EventBusARN
 			}
-			f1 = append(f1, f1elem)
+			f1 = append(f1, *f1elem)
 		}
-		res.SetEventBuses(f1)
+		res.EventBuses = f1
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 	if r.ko.Spec.ReplicationConfig != nil {
-		f3 := &svcsdk.ReplicationConfig{}
+		f3 := &svcsdktypes.ReplicationConfig{}
 		if r.ko.Spec.ReplicationConfig.State != nil {
-			f3.SetState(*r.ko.Spec.ReplicationConfig.State)
+			f3.State = svcsdktypes.ReplicationState(*r.ko.Spec.ReplicationConfig.State)
 		}
-		res.SetReplicationConfig(f3)
+		res.ReplicationConfig = f3
 	}
 	if r.ko.Spec.RoleARN != nil {
-		res.SetRoleArn(*r.ko.Spec.RoleARN)
+		res.RoleArn = r.ko.Spec.RoleARN
 	}
 	if r.ko.Spec.RoutingConfig != nil {
-		f5 := &svcsdk.RoutingConfig{}
+		f5 := &svcsdktypes.RoutingConfig{}
 		if r.ko.Spec.RoutingConfig.FailoverConfig != nil {
-			f5f0 := &svcsdk.FailoverConfig{}
+			f5f0 := &svcsdktypes.FailoverConfig{}
 			if r.ko.Spec.RoutingConfig.FailoverConfig.Primary != nil {
-				f5f0f0 := &svcsdk.Primary{}
+				f5f0f0 := &svcsdktypes.Primary{}
 				if r.ko.Spec.RoutingConfig.FailoverConfig.Primary.HealthCheck != nil {
-					f5f0f0.SetHealthCheck(*r.ko.Spec.RoutingConfig.FailoverConfig.Primary.HealthCheck)
+					f5f0f0.HealthCheck = r.ko.Spec.RoutingConfig.FailoverConfig.Primary.HealthCheck
 				}
-				f5f0.SetPrimary(f5f0f0)
+				f5f0.Primary = f5f0f0
 			}
 			if r.ko.Spec.RoutingConfig.FailoverConfig.Secondary != nil {
-				f5f0f1 := &svcsdk.Secondary{}
+				f5f0f1 := &svcsdktypes.Secondary{}
 				if r.ko.Spec.RoutingConfig.FailoverConfig.Secondary.Route != nil {
-					f5f0f1.SetRoute(*r.ko.Spec.RoutingConfig.FailoverConfig.Secondary.Route)
+					f5f0f1.Route = r.ko.Spec.RoutingConfig.FailoverConfig.Secondary.Route
 				}
-				f5f0.SetSecondary(f5f0f1)
+				f5f0.Secondary = f5f0f1
 			}
-			f5.SetFailoverConfig(f5f0)
+			f5.FailoverConfig = f5f0
 		}
-		res.SetRoutingConfig(f5)
+		res.RoutingConfig = f5
 	}
 
 	return res, nil
@@ -401,7 +400,7 @@ func (rm *resourceManager) sdkUpdate(
 
 	var resp *svcsdk.UpdateEndpointOutput
 	_ = resp
-	resp, err = rm.sdkapi.UpdateEndpointWithContext(ctx, input)
+	resp, err = rm.sdkapi.UpdateEndpoint(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "UpdateEndpoint", err)
 	if err != nil {
 		return nil, err
@@ -443,8 +442,8 @@ func (rm *resourceManager) sdkUpdate(
 	}
 	if resp.ReplicationConfig != nil {
 		f5 := &svcapitypes.ReplicationConfig{}
-		if resp.ReplicationConfig.State != nil {
-			f5.State = resp.ReplicationConfig.State
+		if resp.ReplicationConfig.State != "" {
+			f5.State = aws.String(string(resp.ReplicationConfig.State))
 		}
 		ko.Spec.ReplicationConfig = f5
 	} else {
@@ -479,8 +478,8 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		ko.Spec.RoutingConfig = nil
 	}
-	if resp.State != nil {
-		ko.Status.State = resp.State
+	if resp.State != "" {
+		ko.Status.State = aws.String(string(resp.State))
 	} else {
 		ko.Status.State = nil
 	}
@@ -499,53 +498,53 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.UpdateEndpointInput{}
 
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.EventBuses != nil {
-		f1 := []*svcsdk.EndpointEventBus{}
+		f1 := []svcsdktypes.EndpointEventBus{}
 		for _, f1iter := range r.ko.Spec.EventBuses {
-			f1elem := &svcsdk.EndpointEventBus{}
+			f1elem := &svcsdktypes.EndpointEventBus{}
 			if f1iter.EventBusARN != nil {
-				f1elem.SetEventBusArn(*f1iter.EventBusARN)
+				f1elem.EventBusArn = f1iter.EventBusARN
 			}
-			f1 = append(f1, f1elem)
+			f1 = append(f1, *f1elem)
 		}
-		res.SetEventBuses(f1)
+		res.EventBuses = f1
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 	if r.ko.Spec.ReplicationConfig != nil {
-		f3 := &svcsdk.ReplicationConfig{}
+		f3 := &svcsdktypes.ReplicationConfig{}
 		if r.ko.Spec.ReplicationConfig.State != nil {
-			f3.SetState(*r.ko.Spec.ReplicationConfig.State)
+			f3.State = svcsdktypes.ReplicationState(*r.ko.Spec.ReplicationConfig.State)
 		}
-		res.SetReplicationConfig(f3)
+		res.ReplicationConfig = f3
 	}
 	if r.ko.Spec.RoleARN != nil {
-		res.SetRoleArn(*r.ko.Spec.RoleARN)
+		res.RoleArn = r.ko.Spec.RoleARN
 	}
 	if r.ko.Spec.RoutingConfig != nil {
-		f5 := &svcsdk.RoutingConfig{}
+		f5 := &svcsdktypes.RoutingConfig{}
 		if r.ko.Spec.RoutingConfig.FailoverConfig != nil {
-			f5f0 := &svcsdk.FailoverConfig{}
+			f5f0 := &svcsdktypes.FailoverConfig{}
 			if r.ko.Spec.RoutingConfig.FailoverConfig.Primary != nil {
-				f5f0f0 := &svcsdk.Primary{}
+				f5f0f0 := &svcsdktypes.Primary{}
 				if r.ko.Spec.RoutingConfig.FailoverConfig.Primary.HealthCheck != nil {
-					f5f0f0.SetHealthCheck(*r.ko.Spec.RoutingConfig.FailoverConfig.Primary.HealthCheck)
+					f5f0f0.HealthCheck = r.ko.Spec.RoutingConfig.FailoverConfig.Primary.HealthCheck
 				}
-				f5f0.SetPrimary(f5f0f0)
+				f5f0.Primary = f5f0f0
 			}
 			if r.ko.Spec.RoutingConfig.FailoverConfig.Secondary != nil {
-				f5f0f1 := &svcsdk.Secondary{}
+				f5f0f1 := &svcsdktypes.Secondary{}
 				if r.ko.Spec.RoutingConfig.FailoverConfig.Secondary.Route != nil {
-					f5f0f1.SetRoute(*r.ko.Spec.RoutingConfig.FailoverConfig.Secondary.Route)
+					f5f0f1.Route = r.ko.Spec.RoutingConfig.FailoverConfig.Secondary.Route
 				}
-				f5f0.SetSecondary(f5f0f1)
+				f5f0.Secondary = f5f0f1
 			}
-			f5.SetFailoverConfig(f5f0)
+			f5.FailoverConfig = f5f0
 		}
-		res.SetRoutingConfig(f5)
+		res.RoutingConfig = f5
 	}
 
 	return res, nil
@@ -571,7 +570,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteEndpointOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteEndpointWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteEndpoint(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteEndpoint", err)
 	// always requeue if API call succeeded due to eventually consistent state
 	// transitions
@@ -590,7 +589,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteEndpointInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 
 	return res, nil
@@ -695,20 +694,8 @@ func (rm *resourceManager) updateConditions(
 // and if the exception indicates that it is a Terminal exception
 // 'Terminal' exception are specified in generator configuration
 func (rm *resourceManager) terminalAWSError(err error) bool {
-	if err == nil {
-		return false
-	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
-		return false
-	}
-	switch awsErr.Code() {
-	case "ValidationError",
-		"ValidationException":
-		return true
-	default:
-		return false
-	}
+	// No terminal_errors specified for this resource in generator config
+	return false
 }
 
 // getImmutableFieldChanges returns list of immutable fields from the

@@ -63,8 +63,6 @@ resources:
         404:
           code: ResourceNotFoundException
       terminal_codes:
-        - ValidationError
-        - ValidationException
         - InvalidEventPatternException
   Endpoint:
     fields:
@@ -122,9 +120,6 @@ resources:
       errors:
         404:
           code: ResourceNotFoundException
-      terminal_codes:
-        - ValidationError
-        - ValidationException
   EventBus:
     fields:
       Name:
@@ -218,5 +213,3 @@ resources:
       terminal_codes:
         - InvalidEventPatternException
         - ManagedRuleException # we don't support force because those rules are not managed by ACK
-        - ValidationError
-        - ValidationException

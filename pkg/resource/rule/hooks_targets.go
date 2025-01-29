@@ -21,8 +21,9 @@ import (
 	"github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 	pkgtags "github.com/aws-controllers-k8s/eventbridge-controller/pkg/tags"
@@ -56,7 +57,7 @@ func (rm *resourceManager) getTargets(ctx context.Context, rule, bus string) (ta
 	defer func() { exit(err) }()
 
 	var listTargetsResponse *svcsdk.ListTargetsByRuleOutput
-	listTargetsResponse, err = rm.sdkapi.ListTargetsByRuleWithContext(
+	listTargetsResponse, err = rm.sdkapi.ListTargetsByRule(
 		ctx,
 		&svcsdk.ListTargetsByRuleInput{
 			EventBusName: aws.String(bus),
@@ -67,8 +68,12 @@ func (rm *resourceManager) getTargets(ctx context.Context, rule, bus string) (ta
 	if err != nil {
 		return nil, err
 	}
-
-	return resourceTargetsFromSDKTargets(listTargetsResponse.Targets), nil
+	// Convert []Target to []*Target
+	sdkTargets := make([]*svcsdktypes.Target, len(listTargetsResponse.Targets))
+	for i := range listTargetsResponse.Targets {
+		sdkTargets[i] = &listTargetsResponse.Targets[i]
+	}
+	return resourceTargetsFromSDKTargets(sdkTargets), nil
 }
 
 // syncTargets synchronizes rule targets
@@ -85,14 +90,20 @@ func (rm *resourceManager) syncTargets(
 	added, removed := computeTargetsDelta(latest, desired)
 
 	if len(removed) > 0 {
-		_, err = rm.sdkapi.RemoveTargetsWithContext(
+		// Convert []*string to []string
+		tagKeys := make([]string, len(removed))
+		for i, key := range removed {
+			tagKeys[i] = *key
+		}
+
+		_, err = rm.sdkapi.RemoveTargets(
 			ctx,
 			&svcsdk.RemoveTargetsInput{
 				// NOTE(a-hilaly,embano1): we might need to force the removal, in some cases?
 				// thinking annotations... terminal conditions...
 				Rule:         ruleName,
 				EventBusName: eventBus,
-				Ids:          removed,
+				Ids:          tagKeys, // Use converted slice
 			})
 		rm.metrics.RecordAPICall("UPDATE", "RemoveTargets", err)
 		if err != nil {
@@ -101,12 +112,23 @@ func (rm *resourceManager) syncTargets(
 	}
 
 	if len(added) > 0 {
-		_, err = rm.sdkapi.PutTargetsWithContext(
+		sdkTargets, err := sdkTargetsFromResourceTargets(added)
+		if err != nil {
+			return err
+		}
+
+		// Convert []*svcsdktypes.Target to []svcsdktypes.Target
+		targets := make([]svcsdktypes.Target, len(sdkTargets))
+		for i, t := range sdkTargets {
+			targets[i] = *t
+		}
+
+		_, err = rm.sdkapi.PutTargets(
 			ctx,
 			&svcsdk.PutTargetsInput{
 				Rule:         ruleName,
 				EventBusName: eventBus,
-				Targets:      sdkTargetsFromResourceTargets(added),
+				Targets:      targets,
 			})
 		rm.metrics.RecordAPICall("UPDATE", "PutTargets", err)
 		if err != nil {

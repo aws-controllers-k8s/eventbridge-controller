@@ -19,7 +19,8 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 	svcapitypes "github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
@@ -45,7 +46,10 @@ func newValidationError(field, message string) validationError {
 func validateRuleSpec(spec v1alpha1.RuleSpec) error {
 	var match bool
 	if s := spec.State; s != nil {
-		allowedValues := svcsdk.RuleState_Values()
+		allowedValues := []string{
+			string(svcsdktypes.RuleStateEnabled),
+			string(svcsdktypes.RuleStateDisabled),
+		}
 		for _, v := range allowedValues {
 			if *s == v {
 				match = true

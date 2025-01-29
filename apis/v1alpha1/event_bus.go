@@ -30,10 +30,41 @@ import (
 // source created by an SaaS partner. These events come from the partners services
 // or applications.
 type EventBusSpec struct {
-
+	DeadLetterConfig *DeadLetterConfig `json:"deadLetterConfig,omitempty"`
+	// The event bus description.
+	Description *string `json:"description,omitempty"`
 	// If you are creating a partner event bus, this specifies the partner event
 	// source that the new event bus will be matched with.
 	EventSourceName *string `json:"eventSourceName,omitempty"`
+	// The identifier of the KMS customer managed key for EventBridge to use, if
+	// you choose to use a customer managed key to encrypt events on this event
+	// bus. The identifier can be the key Amazon Resource Name (ARN), KeyId, key
+	// alias, or key alias ARN.
+	//
+	// If you do not specify a customer managed key identifier, EventBridge uses
+	// an Amazon Web Services owned key to encrypt events on the event bus.
+	//
+	// For more information, see Managing keys (https://docs.aws.amazon.com/kms/latest/developerguide/getting-started.html)
+	// in the Key Management Service Developer Guide.
+	//
+	// Archives and schema discovery are not supported for event buses encrypted
+	// using a customer managed key. EventBridge returns an error if:
+	//
+	//   - You call CreateArchive (https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_CreateArchive.html)
+	//     on an event bus set to use a customer managed key for encryption.
+	//
+	//   - You call CreateDiscoverer (https://docs.aws.amazon.com/eventbridge/latest/schema-reference/v1-discoverers.html#CreateDiscoverer)
+	//     on an event bus set to use a customer managed key for encryption.
+	//
+	//   - You call UpdatedEventBus (https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_UpdatedEventBus.html)
+	//     to set a customer managed key on an event bus with an archives or schema
+	//     discovery enabled.
+	//
+	// To enable archives or schema discovery on an event bus, choose to use an
+	// Amazon Web Services owned key. For more information, see Data encryption
+	// in EventBridge (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-encryption.html)
+	// in the Amazon EventBridge User Guide.
+	KMSKeyIdentifier *string `json:"kmsKeyIdentifier,omitempty"`
 	// The name of the new event bus.
 	//
 	// Custom event bus names can't contain the / character, but you can use the

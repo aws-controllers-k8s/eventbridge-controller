@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -28,8 +29,9 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EventBridge{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.Archive{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -74,13 +76,11 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	var resp *svcsdk.DescribeArchiveOutput
-	resp, err = rm.sdkapi.DescribeArchiveWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeArchive(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "DescribeArchive", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ResourceNotFoundException" {
+		var notFound *svcsdktypes.ResourceNotFoundException
+		if errors.As(err, &notFound) {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -123,12 +123,13 @@ func (rm *resourceManager) sdkFind(
 		ko.Spec.EventSourceARN = nil
 	}
 	if resp.RetentionDays != nil {
-		ko.Spec.RetentionDays = resp.RetentionDays
+		retentionDaysCopy := int64(*resp.RetentionDays)
+		ko.Spec.RetentionDays = &retentionDaysCopy
 	} else {
 		ko.Spec.RetentionDays = nil
 	}
-	if resp.State != nil {
-		ko.Status.State = resp.State
+	if resp.State != "" {
+		ko.Status.State = aws.String(string(resp.State))
 	} else {
 		ko.Status.State = nil
 	}
@@ -160,7 +161,7 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.DescribeArchiveInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetArchiveName(*r.ko.Spec.Name)
+		res.ArchiveName = r.ko.Spec.Name
 	}
 
 	return res, nil
@@ -185,7 +186,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateArchiveOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateArchiveWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateArchive(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateArchive", err)
 	if err != nil {
 		return nil, err
@@ -206,8 +207,8 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.CreationTime = nil
 	}
-	if resp.State != nil {
-		ko.Status.State = resp.State
+	if resp.State != "" {
+		ko.Status.State = aws.String(string(resp.State))
 	} else {
 		ko.Status.State = nil
 	}
@@ -236,19 +237,23 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateArchiveInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetArchiveName(*r.ko.Spec.Name)
+		res.ArchiveName = r.ko.Spec.Name
 	}
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.EventPattern != nil {
-		res.SetEventPattern(*r.ko.Spec.EventPattern)
+		res.EventPattern = r.ko.Spec.EventPattern
 	}
 	if r.ko.Spec.EventSourceARN != nil {
-		res.SetEventSourceArn(*r.ko.Spec.EventSourceARN)
+		res.EventSourceArn = r.ko.Spec.EventSourceARN
 	}
 	if r.ko.Spec.RetentionDays != nil {
-		res.SetRetentionDays(*r.ko.Spec.RetentionDays)
+		if *r.ko.Spec.RetentionDays > math.MaxInt32 || *r.ko.Spec.RetentionDays < math.MinInt32 {
+			return nil, fmt.Errorf("error: field RetentionDays is of type int32")
+		}
+		retentionDaysCopy := int32(*r.ko.Spec.RetentionDays)
+		res.RetentionDays = &retentionDaysCopy
 	}
 
 	return res, nil
@@ -299,7 +304,7 @@ func (rm *resourceManager) sdkUpdate(
 
 	var resp *svcsdk.UpdateArchiveOutput
 	_ = resp
-	resp, err = rm.sdkapi.UpdateArchiveWithContext(ctx, input)
+	resp, err = rm.sdkapi.UpdateArchive(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "UpdateArchive", err)
 	if err != nil {
 		return nil, err
@@ -320,8 +325,8 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		ko.Status.CreationTime = nil
 	}
-	if resp.State != nil {
-		ko.Status.State = resp.State
+	if resp.State != "" {
+		ko.Status.State = aws.String(string(resp.State))
 	} else {
 		ko.Status.State = nil
 	}
@@ -345,16 +350,20 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.UpdateArchiveInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetArchiveName(*r.ko.Spec.Name)
+		res.ArchiveName = r.ko.Spec.Name
 	}
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.EventPattern != nil {
-		res.SetEventPattern(*r.ko.Spec.EventPattern)
+		res.EventPattern = r.ko.Spec.EventPattern
 	}
 	if r.ko.Spec.RetentionDays != nil {
-		res.SetRetentionDays(*r.ko.Spec.RetentionDays)
+		if *r.ko.Spec.RetentionDays > math.MaxInt32 || *r.ko.Spec.RetentionDays < math.MinInt32 {
+			return nil, fmt.Errorf("error: field RetentionDays is of type int32")
+		}
+		retentionDaysCopy := int32(*r.ko.Spec.RetentionDays)
+		res.RetentionDays = &retentionDaysCopy
 	}
 
 	return res, nil
@@ -376,7 +385,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteArchiveOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteArchiveWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteArchive(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteArchive", err)
 	return nil, err
 }
@@ -389,7 +398,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteArchiveInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetArchiveName(*r.ko.Spec.Name)
+		res.ArchiveName = r.ko.Spec.Name
 	}
 
 	return res, nil
@@ -497,14 +506,8 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
-		return false
-	}
-	switch awsErr.Code() {
-	case "ValidationError",
-		"ValidationException",
-		"InvalidEventPatternException":
+	switch err.(type) {
+	case *svcsdktypes.InvalidEventPatternException:
 		return true
 	default:
 		return false

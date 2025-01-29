@@ -7,7 +7,10 @@ toolchain go1.22.5
 require (
 	github.com/aws-controllers-k8s/runtime v0.41.0
 	github.com/aws/aws-sdk-go v1.49.0
+	github.com/aws/aws-sdk-go-v2 v1.34.0
+	github.com/aws/aws-sdk-go-v2/service/eventbridge v1.36.7
 	github.com/go-logr/logr v1.4.2
+	github.com/google/go-cmp v0.6.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc
 	gotest.tools/v3 v3.0.3
@@ -18,6 +21,19 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go-v2/config v1.28.6 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.47 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.21 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.29 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.29 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.1 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.29 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.6 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.24.7 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.6 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.33.2 // indirect
+	github.com/aws/smithy-go v1.22.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -34,7 +50,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
@@ -76,3 +91,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+replace github.com/aws-controllers-k8s/runtime => github.com/michaelhtm/ack-runtime v0.40.1-0.20250128172628-d6fa812b5fbd

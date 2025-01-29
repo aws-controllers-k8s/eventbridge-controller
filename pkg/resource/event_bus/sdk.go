@@ -28,8 +28,9 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +41,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EventBridge{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.EventBus{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +49,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -74,13 +75,11 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	var resp *svcsdk.DescribeEventBusOutput
-	resp, err = rm.sdkapi.DescribeEventBusWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeEventBus(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "DescribeEventBus", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ResourceNotFoundException" {
+		var notFound *svcsdktypes.ResourceNotFoundException
+		if errors.As(err, &notFound) {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -96,6 +95,25 @@ func (rm *resourceManager) sdkFind(
 	if resp.Arn != nil {
 		arn := ackv1alpha1.AWSResourceName(*resp.Arn)
 		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
+	if resp.DeadLetterConfig != nil {
+		f2 := &svcapitypes.DeadLetterConfig{}
+		if resp.DeadLetterConfig.Arn != nil {
+			f2.ARN = resp.DeadLetterConfig.Arn
+		}
+		ko.Spec.DeadLetterConfig = f2
+	} else {
+		ko.Spec.DeadLetterConfig = nil
+	}
+	if resp.Description != nil {
+		ko.Spec.Description = resp.Description
+	} else {
+		ko.Spec.Description = nil
+	}
+	if resp.KmsKeyIdentifier != nil {
+		ko.Spec.KMSKeyIdentifier = resp.KmsKeyIdentifier
+	} else {
+		ko.Spec.KMSKeyIdentifier = nil
 	}
 	if resp.Name != nil {
 		ko.Spec.Name = resp.Name
@@ -128,7 +146,7 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.DescribeEventBusInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 
 	return res, nil
@@ -153,7 +171,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateEventBusOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateEventBusWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateEventBus(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateEventBus", err)
 	if err != nil {
 		return nil, err
@@ -162,12 +180,31 @@ func (rm *resourceManager) sdkCreate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
+	if resp.DeadLetterConfig != nil {
+		f0 := &svcapitypes.DeadLetterConfig{}
+		if resp.DeadLetterConfig.Arn != nil {
+			f0.ARN = resp.DeadLetterConfig.Arn
+		}
+		ko.Spec.DeadLetterConfig = f0
+	} else {
+		ko.Spec.DeadLetterConfig = nil
+	}
+	if resp.Description != nil {
+		ko.Spec.Description = resp.Description
+	} else {
+		ko.Spec.Description = nil
+	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	}
 	if resp.EventBusArn != nil {
 		arn := ackv1alpha1.AWSResourceName(*resp.EventBusArn)
 		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
+	if resp.KmsKeyIdentifier != nil {
+		ko.Spec.KMSKeyIdentifier = resp.KmsKeyIdentifier
+	} else {
+		ko.Spec.KMSKeyIdentifier = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -182,25 +219,38 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreateEventBusInput, error) {
 	res := &svcsdk.CreateEventBusInput{}
 
+	if r.ko.Spec.DeadLetterConfig != nil {
+		f0 := &svcsdktypes.DeadLetterConfig{}
+		if r.ko.Spec.DeadLetterConfig.ARN != nil {
+			f0.Arn = r.ko.Spec.DeadLetterConfig.ARN
+		}
+		res.DeadLetterConfig = f0
+	}
+	if r.ko.Spec.Description != nil {
+		res.Description = r.ko.Spec.Description
+	}
 	if r.ko.Spec.EventSourceName != nil {
-		res.SetEventSourceName(*r.ko.Spec.EventSourceName)
+		res.EventSourceName = r.ko.Spec.EventSourceName
+	}
+	if r.ko.Spec.KMSKeyIdentifier != nil {
+		res.KmsKeyIdentifier = r.ko.Spec.KMSKeyIdentifier
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 	if r.ko.Spec.Tags != nil {
-		f2 := []*svcsdk.Tag{}
-		for _, f2iter := range r.ko.Spec.Tags {
-			f2elem := &svcsdk.Tag{}
-			if f2iter.Key != nil {
-				f2elem.SetKey(*f2iter.Key)
+		f5 := []svcsdktypes.Tag{}
+		for _, f5iter := range r.ko.Spec.Tags {
+			f5elem := &svcsdktypes.Tag{}
+			if f5iter.Key != nil {
+				f5elem.Key = f5iter.Key
 			}
-			if f2iter.Value != nil {
-				f2elem.SetValue(*f2iter.Value)
+			if f5iter.Value != nil {
+				f5elem.Value = f5iter.Value
 			}
-			f2 = append(f2, f2elem)
+			f5 = append(f5, *f5elem)
 		}
-		res.SetTags(f2)
+		res.Tags = f5
 	}
 
 	return res, nil
@@ -233,7 +283,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteEventBusOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteEventBusWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteEventBus(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteEventBus", err)
 	return nil, err
 }
@@ -246,7 +296,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteEventBusInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 
 	return res, nil

@@ -1,20 +1,20 @@
 // sdkTargetsFromResourceTargets converts the given Kubernetes resource targets to AWS service targets
 func sdkTargetsFromResourceTargets(
 	targets []*svcapitypes.Target,
-) ([]*svcsdk.Target) {
-	var res []*svcsdk.Target
+) ([]*svcsdktypes.Target, error) {
+	var res []*svcsdktypes.Target
 	{{- $field := (index .CRD.SpecFields "Targets" )}}
 	for _, krTarget := range targets {
-		t := &svcsdk.Target{}
+		t := &svcsdktypes.Target{}
 		{{ GoCodeSetSDKForStruct .CRD "" "t" $field.ShapeRef.Shape.MemberRef "" "krTarget" 1 }}
 		res = append(res, t)
 	}
-	return res
+	return res, nil
 }
 
 // resourceTargetsFromSDKTargets converts the given AWS service targets to Kubernetes resource targets
 func resourceTargetsFromSDKTargets(
-	targets []*svcsdk.Target,
+	targets []*svcsdktypes.Target,
 ) ([]*svcapitypes.Target) {
 	var res []*svcapitypes.Target
 	for _, sdkTarget := range targets {

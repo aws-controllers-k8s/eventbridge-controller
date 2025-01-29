@@ -18,7 +18,8 @@ import (
 	"fmt"
 
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 )
@@ -26,8 +27,8 @@ import (
 // TerminalStatuses are the status strings that are terminal states for an
 // Archive
 var TerminalStatuses = []string{
-	svcsdk.ArchiveStateCreateFailed,
-	svcsdk.ArchiveStateUpdateFailed,
+	string(svcsdktypes.ArchiveStateCreateFailed),
+	string(svcsdktypes.ArchiveStateUpdateFailed),
 }
 
 // archiveInTerminalState returns whether the supplied Archive is in a terminal
@@ -52,7 +53,7 @@ func archiveAvailable(r *resource) bool {
 		return false
 	}
 	state := *r.ko.Status.State
-	return state == svcsdk.ArchiveStateEnabled || state == svcsdk.ArchiveStateDisabled
+	return state == string(svcsdktypes.ArchiveStateEnabled) || state == string(svcsdktypes.ArchiveStateDisabled)
 }
 
 // archiveCreating returns true if the supplied Archive is in the process of
@@ -62,7 +63,7 @@ func archiveCreating(r *resource) bool {
 		return false
 	}
 	state := *r.ko.Status.State
-	return state == svcsdk.ArchiveStateCreating
+	return state == string(svcsdktypes.ArchiveStateCreating)
 }
 
 // requeueWaitUntilCanModify returns a `ackrequeue.RequeueNeededAfter` struct
@@ -90,14 +91,14 @@ func unsetRemovedSpecFields(
 	input *svcsdk.UpdateArchiveInput,
 ) {
 	if spec.EventPattern == nil {
-		input.SetEventPattern("")
+		input.EventPattern = nil
 	}
 
 	if spec.Description == nil {
-		input.SetDescription("")
+		input.Description = nil
 	}
 
 	if spec.RetentionDays == nil {
-		input.SetRetentionDays(0)
+		input.RetentionDays = nil
 	}
 }

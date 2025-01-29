@@ -44,11 +44,36 @@ func newResourceDelta(
 	}
 	compareTags(delta, a, b)
 
+	if ackcompare.HasNilDifference(a.ko.Spec.DeadLetterConfig, b.ko.Spec.DeadLetterConfig) {
+		delta.Add("Spec.DeadLetterConfig", a.ko.Spec.DeadLetterConfig, b.ko.Spec.DeadLetterConfig)
+	} else if a.ko.Spec.DeadLetterConfig != nil && b.ko.Spec.DeadLetterConfig != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.DeadLetterConfig.ARN, b.ko.Spec.DeadLetterConfig.ARN) {
+			delta.Add("Spec.DeadLetterConfig.ARN", a.ko.Spec.DeadLetterConfig.ARN, b.ko.Spec.DeadLetterConfig.ARN)
+		} else if a.ko.Spec.DeadLetterConfig.ARN != nil && b.ko.Spec.DeadLetterConfig.ARN != nil {
+			if *a.ko.Spec.DeadLetterConfig.ARN != *b.ko.Spec.DeadLetterConfig.ARN {
+				delta.Add("Spec.DeadLetterConfig.ARN", a.ko.Spec.DeadLetterConfig.ARN, b.ko.Spec.DeadLetterConfig.ARN)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Description, b.ko.Spec.Description) {
+		delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
+	} else if a.ko.Spec.Description != nil && b.ko.Spec.Description != nil {
+		if *a.ko.Spec.Description != *b.ko.Spec.Description {
+			delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EventSourceName, b.ko.Spec.EventSourceName) {
 		delta.Add("Spec.EventSourceName", a.ko.Spec.EventSourceName, b.ko.Spec.EventSourceName)
 	} else if a.ko.Spec.EventSourceName != nil && b.ko.Spec.EventSourceName != nil {
 		if *a.ko.Spec.EventSourceName != *b.ko.Spec.EventSourceName {
 			delta.Add("Spec.EventSourceName", a.ko.Spec.EventSourceName, b.ko.Spec.EventSourceName)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.KMSKeyIdentifier, b.ko.Spec.KMSKeyIdentifier) {
+		delta.Add("Spec.KMSKeyIdentifier", a.ko.Spec.KMSKeyIdentifier, b.ko.Spec.KMSKeyIdentifier)
+	} else if a.ko.Spec.KMSKeyIdentifier != nil && b.ko.Spec.KMSKeyIdentifier != nil {
+		if *a.ko.Spec.KMSKeyIdentifier != *b.ko.Spec.KMSKeyIdentifier {
+			delta.Add("Spec.KMSKeyIdentifier", a.ko.Spec.KMSKeyIdentifier, b.ko.Spec.KMSKeyIdentifier)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
