@@ -5,7 +5,7 @@ if archiveInTerminalState(latest) {
 	return desired, nil
 }
 
-if archiveCreating(latest) {
+if archiveModifying(latest) {
 	msg := fmt.Sprintf("Archive is in status %q", *latest.ko.Status.State)
 	ackcondition.SetSynced(desired, corev1.ConditionFalse, &msg, nil)
 	return desired, requeueWaitUntilCanModify(latest)

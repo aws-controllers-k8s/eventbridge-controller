@@ -33,7 +33,7 @@ type RuleSpec struct {
 	EventBusRef  *ackv1alpha1.AWSResourceReferenceWrapper `json:"eventBusRef,omitempty"`
 	// The event pattern. For more information, see Amazon EventBridge event patterns
 	// (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html)
-	// in the Amazon EventBridge User Guide.
+	// in the Amazon EventBridge User Guide .
 	EventPattern *string `json:"eventPattern,omitempty"`
 	// The name of the rule that you are creating or updating.
 	// +kubebuilder:validation:Required
@@ -66,7 +66,7 @@ type RuleSpec struct {
 	//     see Logging management events (https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-management-events-with-cloudtrail.html#logging-management-events)
 	//     in the CloudTrail User Guide, and Filtering management events from Amazon
 	//     Web Services services (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-service-event.html#eb-service-event-cloudtrail)
-	//     in the Amazon EventBridge User Guide. This value is only valid for rules
+	//     in the Amazon EventBridge User Guide . This value is only valid for rules
 	//     on the default (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is-how-it-works-concepts.html#eb-bus-concepts-buses)
 	//     event bus or custom event buses (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-event-bus.html).
 	//     It does not apply to partner event buses (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-saas.html).

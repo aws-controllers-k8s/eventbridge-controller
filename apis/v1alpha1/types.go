@@ -128,15 +128,19 @@ type ConnectionHeaderParameter struct {
 	IsValueSecret *bool `json:"isValueSecret,omitempty"`
 }
 
-// Additional query string parameter for the connection. You can include up
-// to 100 additional query string parameters per request. Each additional parameter
-// counts towards the event payload size, which cannot exceed 64 KB.
+// Any additional query string parameter for the connection. You can include
+// up to 100 additional query string parameters per request. Each additional
+// parameter counts towards the event payload size, which cannot exceed 64 KB.
 type ConnectionQueryStringParameter struct {
 	IsValueSecret *bool `json:"isValueSecret,omitempty"`
 }
 
-// A DeadLetterConfig object that contains information about a dead-letter queue
-// configuration.
+// Configuration details of the Amazon SQS queue for EventBridge to use as a
+// dead-letter queue (DLQ).
+//
+// For more information, see Using dead-letter queues to process undelivered
+// events (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-event-delivery.html#eb-rule-dlq)
+// in the EventBridge User Guide.
 type DeadLetterConfig struct {
 	ARN *string `json:"arn,omitempty"`
 }
@@ -169,7 +173,7 @@ type EndpointEventBus struct {
 // it regional-fault tolerant. For more information about global endpoints,
 // see Making applications Regional-fault tolerant with global endpoints and
 // event replication (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-global-endpoints.html)
-// in the Amazon EventBridge User Guide.
+// in the Amazon EventBridge User Guide .
 type Endpoint_SDK struct {
 	ARN              *string             `json:"arn,omitempty"`
 	CreationTime     *metav1.Time        `json:"creationTime,omitempty"`
@@ -196,9 +200,12 @@ type Endpoint_SDK struct {
 // source created by an SaaS partner. These events come from the partners services
 // or applications.
 type EventBus_SDK struct {
-	ARN    *string `json:"arn,omitempty"`
-	Name   *string `json:"name,omitempty"`
-	Policy *string `json:"policy,omitempty"`
+	ARN              *string      `json:"arn,omitempty"`
+	CreationTime     *metav1.Time `json:"creationTime,omitempty"`
+	Description      *string      `json:"description,omitempty"`
+	LastModifiedTime *metav1.Time `json:"lastModifiedTime,omitempty"`
+	Name             *string      `json:"name,omitempty"`
+	Policy           *string      `json:"policy,omitempty"`
 }
 
 // A partner event source is created by an SaaS partner. If a customer creates
@@ -440,8 +447,12 @@ type Target struct {
 	ARN *string `json:"arn,omitempty"`
 	// The custom parameters to be used when the target is an Batch job.
 	BatchParameters *BatchParameters `json:"batchParameters,omitempty"`
-	// A DeadLetterConfig object that contains information about a dead-letter queue
-	// configuration.
+	// Configuration details of the Amazon SQS queue for EventBridge to use as a
+	// dead-letter queue (DLQ).
+	//
+	// For more information, see Using dead-letter queues to process undelivered
+	// events (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-event-delivery.html#eb-rule-dlq)
+	// in the EventBridge User Guide.
 	DeadLetterConfig *DeadLetterConfig `json:"deadLetterConfig,omitempty"`
 	// The custom parameters to be used when the target is an Amazon ECS task.
 	ECSParameters *ECSParameters `json:"ecsParameters,omitempty"`

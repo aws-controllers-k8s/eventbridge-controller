@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EventBridge{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.EventBus{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -74,13 +76,11 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	var resp *svcsdk.DescribeEventBusOutput
-	resp, err = rm.sdkapi.DescribeEventBusWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeEventBus(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "DescribeEventBus", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ResourceNotFoundException" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "ResourceNotFoundException" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -128,7 +128,7 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.DescribeEventBusInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 
 	return res, nil
@@ -153,7 +153,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateEventBusOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateEventBusWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateEventBus(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateEventBus", err)
 	if err != nil {
 		return nil, err
@@ -183,24 +183,24 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateEventBusInput{}
 
 	if r.ko.Spec.EventSourceName != nil {
-		res.SetEventSourceName(*r.ko.Spec.EventSourceName)
+		res.EventSourceName = r.ko.Spec.EventSourceName
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 	if r.ko.Spec.Tags != nil {
-		f2 := []*svcsdk.Tag{}
+		f2 := []svcsdktypes.Tag{}
 		for _, f2iter := range r.ko.Spec.Tags {
-			f2elem := &svcsdk.Tag{}
+			f2elem := &svcsdktypes.Tag{}
 			if f2iter.Key != nil {
-				f2elem.SetKey(*f2iter.Key)
+				f2elem.Key = f2iter.Key
 			}
 			if f2iter.Value != nil {
-				f2elem.SetValue(*f2iter.Value)
+				f2elem.Value = f2iter.Value
 			}
-			f2 = append(f2, f2elem)
+			f2 = append(f2, *f2elem)
 		}
-		res.SetTags(f2)
+		res.Tags = f2
 	}
 
 	return res, nil
@@ -233,7 +233,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteEventBusOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteEventBusWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteEventBus(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteEventBus", err)
 	return nil, err
 }
@@ -246,7 +246,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteEventBusInput{}
 
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 
 	return res, nil

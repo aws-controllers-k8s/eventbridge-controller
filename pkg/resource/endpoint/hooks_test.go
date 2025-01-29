@@ -17,8 +17,11 @@ import (
 	"testing"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
@@ -277,16 +280,16 @@ func Test_unsetRemovedSpecFields(t *testing.T) {
 				}},
 			},
 			input: &eventbridge.UpdateEndpointInput{
-				EventBuses: []*eventbridge.EndpointEventBus{
+				EventBuses: []svcsdktypes.EndpointEventBus{
 					{EventBusArn: aws.String("arn:aws:events:us-east-1:123456789012:myApplicationBus")},
 					{EventBusArn: aws.String("arn:aws:events:us-east-2:123456789012:myApplicationBus")},
 				},
 				Name: aws.String("endpointspec"),
-				RoutingConfig: &eventbridge.RoutingConfig{FailoverConfig: &eventbridge.FailoverConfig{
-					Primary: &eventbridge.Primary{
+				RoutingConfig: &svcsdktypes.RoutingConfig{FailoverConfig: &svcsdktypes.FailoverConfig{
+					Primary: &svcsdktypes.Primary{
 						HealthCheck: aws.String("arn:aws:route53:::healthcheck/1dc6d4f8-5ec8-4089-8b2d-692eef46316b"),
 					},
-					Secondary: &eventbridge.Secondary{
+					Secondary: &svcsdktypes.Secondary{
 						Route: aws.String("eu-central-1"),
 					},
 				}},
@@ -302,16 +305,16 @@ func Test_unsetRemovedSpecFields(t *testing.T) {
 			},
 			wantInput: &eventbridge.UpdateEndpointInput{
 				Description: &emtpyString,
-				EventBuses: []*eventbridge.EndpointEventBus{
+				EventBuses: []svcsdktypes.EndpointEventBus{
 					{EventBusArn: aws.String("arn:aws:events:us-east-1:123456789012:myApplicationBus")},
 					{EventBusArn: aws.String("arn:aws:events:us-east-2:123456789012:myApplicationBus")},
 				},
 				Name: aws.String("endpointspec"),
-				RoutingConfig: &eventbridge.RoutingConfig{FailoverConfig: &eventbridge.FailoverConfig{
-					Primary: &eventbridge.Primary{
+				RoutingConfig: &svcsdktypes.RoutingConfig{FailoverConfig: &svcsdktypes.FailoverConfig{
+					Primary: &svcsdktypes.Primary{
 						HealthCheck: aws.String("arn:aws:route53:::healthcheck/1dc6d4f8-5ec8-4089-8b2d-692eef46316b"),
 					},
-					Secondary: &eventbridge.Secondary{
+					Secondary: &svcsdktypes.Secondary{
 						Route: aws.String("eu-central-1"),
 					},
 				}},
@@ -336,16 +339,16 @@ func Test_unsetRemovedSpecFields(t *testing.T) {
 				}},
 			},
 			input: &eventbridge.UpdateEndpointInput{
-				EventBuses: []*eventbridge.EndpointEventBus{
+				EventBuses: []svcsdktypes.EndpointEventBus{
 					{EventBusArn: aws.String("arn:aws:events:us-east-1:123456789012:myApplicationBus")},
 					{EventBusArn: aws.String("arn:aws:events:us-east-2:123456789012:myApplicationBus")},
 				},
 				Name: aws.String("endpointspec"),
-				RoutingConfig: &eventbridge.RoutingConfig{FailoverConfig: &eventbridge.FailoverConfig{
-					Primary: &eventbridge.Primary{
+				RoutingConfig: &svcsdktypes.RoutingConfig{FailoverConfig: &svcsdktypes.FailoverConfig{
+					Primary: &svcsdktypes.Primary{
 						HealthCheck: aws.String("arn:aws:route53:::healthcheck/1dc6d4f8-5ec8-4089-8b2d-692eef46316b"),
 					},
-					Secondary: &eventbridge.Secondary{
+					Secondary: &svcsdktypes.Secondary{
 						Route: aws.String("eu-central-1"),
 					},
 				}},
@@ -360,27 +363,42 @@ func Test_unsetRemovedSpecFields(t *testing.T) {
 				},
 			},
 			wantInput: &eventbridge.UpdateEndpointInput{
-				EventBuses: []*eventbridge.EndpointEventBus{
+				EventBuses: []svcsdktypes.EndpointEventBus{
 					{EventBusArn: aws.String("arn:aws:events:us-east-1:123456789012:myApplicationBus")},
 					{EventBusArn: aws.String("arn:aws:events:us-east-2:123456789012:myApplicationBus")},
 				},
 				Name: aws.String("endpointspec"),
-				RoutingConfig: &eventbridge.RoutingConfig{FailoverConfig: &eventbridge.FailoverConfig{
-					Primary: &eventbridge.Primary{
+				RoutingConfig: &svcsdktypes.RoutingConfig{FailoverConfig: &svcsdktypes.FailoverConfig{
+					Primary: &svcsdktypes.Primary{
 						HealthCheck: aws.String("arn:aws:route53:::healthcheck/1dc6d4f8-5ec8-4089-8b2d-692eef46316b"),
 					},
-					Secondary: &eventbridge.Secondary{
+					Secondary: &svcsdktypes.Secondary{
 						Route: aws.String("eu-central-1"),
 					},
 				}},
-				ReplicationConfig: &eventbridge.ReplicationConfig{State: aws.String("ENABLED")},
+				ReplicationConfig: &svcsdktypes.ReplicationConfig{State: svcsdktypes.ReplicationStateEnabled},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			unsetRemovedSpecFields(tt.delta, tt.spec, tt.input)
-			assert.DeepEqual(t, tt.input, tt.wantInput)
+			normalizeNilStrings(tt.input)
+			normalizeNilStrings(tt.wantInput)
+
+			if diff := cmp.Diff(tt.wantInput, tt.input,
+				cmpopts.IgnoreUnexported(
+					svcsdktypes.EndpointEventBus{},
+					svcsdktypes.ReplicationConfig{},
+					svcsdktypes.RoutingConfig{},
+					svcsdktypes.FailoverConfig{},
+					svcsdktypes.Primary{},
+					svcsdktypes.Secondary{},
+				),
+				cmp.AllowUnexported(eventbridge.UpdateEndpointInput{}),
+			); diff != "" {
+				t.Errorf("Mismatch (-want +got):\n%s", diff)
+			}
 		})
 	}
 }
@@ -550,4 +568,11 @@ func Test_customPreCompare(t *testing.T) {
 			}
 		})
 	}
+}
+func normalizeNilStrings(input *eventbridge.UpdateEndpointInput) *eventbridge.UpdateEndpointInput {
+	if input.Description == nil {
+		emptyStr := ""
+		input.Description = &emptyStr
+	}
+	return input
 }

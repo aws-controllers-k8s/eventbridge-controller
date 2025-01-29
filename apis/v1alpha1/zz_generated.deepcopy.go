@@ -1037,6 +1037,19 @@ func (in *EventBus_SDK) DeepCopyInto(out *EventBus_SDK) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.CreationTime != nil {
+		in, out := &in.CreationTime, &out.CreationTime
+		*out = (*in).DeepCopy()
+	}
+	if in.Description != nil {
+		in, out := &in.Description, &out.Description
+		*out = new(string)
+		**out = **in
+	}
+	if in.LastModifiedTime != nil {
+		in, out := &in.LastModifiedTime, &out.LastModifiedTime
+		*out = (*in).DeepCopy()
+	}
 	if in.Name != nil {
 		in, out := &in.Name, &out.Name
 		*out = new(string)

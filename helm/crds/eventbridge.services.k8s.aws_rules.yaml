@@ -84,7 +84,7 @@ spec:
                 description: |-
                   The event pattern. For more information, see Amazon EventBridge event patterns
                   (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html)
-                  in the Amazon EventBridge User Guide.
+                  in the Amazon EventBridge User Guide .
                 type: string
               name:
                 description: The name of the rule that you are creating or updating.
@@ -123,7 +123,7 @@ spec:
                       see Logging management events (https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-management-events-with-cloudtrail.html#logging-management-events)
                       in the CloudTrail User Guide, and Filtering management events from Amazon
                       Web Services services (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-service-event.html#eb-service-event-cloudtrail)
-                      in the Amazon EventBridge User Guide. This value is only valid for rules
+                      in the Amazon EventBridge User Guide . This value is only valid for rules
                       on the default (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is-how-it-works-concepts.html#eb-bus-concepts-buses)
                       event bus or custom event buses (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-event-bus.html).
                       It does not apply to partner event buses (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-saas.html).
@@ -189,8 +189,12 @@ spec:
                       type: object
                     deadLetterConfig:
                       description: |-
-                        A DeadLetterConfig object that contains information about a dead-letter queue
-                        configuration.
+                        Configuration details of the Amazon SQS queue for EventBridge to use as a
+                        dead-letter queue (DLQ).
+
+                        For more information, see Using dead-letter queues to process undelivered
+                        events (https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-event-delivery.html#eb-rule-dlq)
+                        in the EventBridge User Guide.
                       properties:
                         arn:
                           type: string
