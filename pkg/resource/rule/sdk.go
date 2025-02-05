@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -28,8 +29,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +43,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EventBridge{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.Rule{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +51,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -74,13 +77,11 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	var resp *svcsdk.DescribeRuleOutput
-	resp, err = rm.sdkapi.DescribeRuleWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeRule(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "DescribeRule", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ResourceNotFoundException" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "ResourceNotFoundException" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -127,8 +128,8 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.ScheduleExpression = nil
 	}
-	if resp.State != nil {
-		ko.Spec.State = resp.State
+	if resp.State != "" {
+		ko.Spec.State = aws.String(string(resp.State))
 	} else {
 		ko.Spec.State = nil
 	}
@@ -159,10 +160,10 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.DescribeRuleInput{}
 
 	if r.ko.Spec.EventBusName != nil {
-		res.SetEventBusName(*r.ko.Spec.EventBusName)
+		res.EventBusName = r.ko.Spec.EventBusName
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 
 	return res, nil
@@ -193,7 +194,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.PutRuleOutput
 	_ = resp
-	resp, err = rm.sdkapi.PutRuleWithContext(ctx, input)
+	resp, err = rm.sdkapi.PutRule(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "PutRule", err)
 	if err != nil {
 		return nil, err
@@ -233,39 +234,39 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.PutRuleInput{}
 
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.EventBusName != nil {
-		res.SetEventBusName(*r.ko.Spec.EventBusName)
+		res.EventBusName = r.ko.Spec.EventBusName
 	}
 	if r.ko.Spec.EventPattern != nil {
-		res.SetEventPattern(*r.ko.Spec.EventPattern)
+		res.EventPattern = r.ko.Spec.EventPattern
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 	if r.ko.Spec.RoleARN != nil {
-		res.SetRoleArn(*r.ko.Spec.RoleARN)
+		res.RoleArn = r.ko.Spec.RoleARN
 	}
 	if r.ko.Spec.ScheduleExpression != nil {
-		res.SetScheduleExpression(*r.ko.Spec.ScheduleExpression)
+		res.ScheduleExpression = r.ko.Spec.ScheduleExpression
 	}
 	if r.ko.Spec.State != nil {
-		res.SetState(*r.ko.Spec.State)
+		res.State = svcsdktypes.RuleState(*r.ko.Spec.State)
 	}
 	if r.ko.Spec.Tags != nil {
-		f7 := []*svcsdk.Tag{}
+		f7 := []svcsdktypes.Tag{}
 		for _, f7iter := range r.ko.Spec.Tags {
-			f7elem := &svcsdk.Tag{}
+			f7elem := &svcsdktypes.Tag{}
 			if f7iter.Key != nil {
-				f7elem.SetKey(*f7iter.Key)
+				f7elem.Key = f7iter.Key
 			}
 			if f7iter.Value != nil {
-				f7elem.SetValue(*f7iter.Value)
+				f7elem.Value = f7iter.Value
 			}
-			f7 = append(f7, f7elem)
+			f7 = append(f7, *f7elem)
 		}
-		res.SetTags(f7)
+		res.Tags = f7
 	}
 
 	return res, nil
@@ -318,7 +319,7 @@ func (rm *resourceManager) sdkUpdate(
 
 	var resp *svcsdk.PutRuleOutput
 	_ = resp
-	resp, err = rm.sdkapi.PutRuleWithContext(ctx, input)
+	resp, err = rm.sdkapi.PutRule(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutRule", err)
 	if err != nil {
 		return nil, err
@@ -349,39 +350,39 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.PutRuleInput{}
 
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.EventBusName != nil {
-		res.SetEventBusName(*r.ko.Spec.EventBusName)
+		res.EventBusName = r.ko.Spec.EventBusName
 	}
 	if r.ko.Spec.EventPattern != nil {
-		res.SetEventPattern(*r.ko.Spec.EventPattern)
+		res.EventPattern = r.ko.Spec.EventPattern
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 	if r.ko.Spec.RoleARN != nil {
-		res.SetRoleArn(*r.ko.Spec.RoleARN)
+		res.RoleArn = r.ko.Spec.RoleARN
 	}
 	if r.ko.Spec.ScheduleExpression != nil {
-		res.SetScheduleExpression(*r.ko.Spec.ScheduleExpression)
+		res.ScheduleExpression = r.ko.Spec.ScheduleExpression
 	}
 	if r.ko.Spec.State != nil {
-		res.SetState(*r.ko.Spec.State)
+		res.State = svcsdktypes.RuleState(*r.ko.Spec.State)
 	}
 	if r.ko.Spec.Tags != nil {
-		f7 := []*svcsdk.Tag{}
+		f7 := []svcsdktypes.Tag{}
 		for _, f7iter := range r.ko.Spec.Tags {
-			f7elem := &svcsdk.Tag{}
+			f7elem := &svcsdktypes.Tag{}
 			if f7iter.Key != nil {
-				f7elem.SetKey(*f7iter.Key)
+				f7elem.Key = f7iter.Key
 			}
 			if f7iter.Value != nil {
-				f7elem.SetValue(*f7iter.Value)
+				f7elem.Value = f7iter.Value
 			}
-			f7 = append(f7, f7elem)
+			f7 = append(f7, *f7elem)
 		}
-		res.SetTags(f7)
+		res.Tags = f7
 	}
 
 	return res, nil
@@ -413,7 +414,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteRuleOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteRuleWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteRule(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteRule", err)
 	return nil, err
 }
@@ -426,10 +427,10 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteRuleInput{}
 
 	if r.ko.Spec.EventBusName != nil {
-		res.SetEventBusName(*r.ko.Spec.EventBusName)
+		res.EventBusName = r.ko.Spec.EventBusName
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 
 	return res, nil
@@ -537,11 +538,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "InvalidEventPatternException",
 		"ManagedRuleException",
 		"ValidationError",
@@ -570,328 +572,315 @@ func (rm *resourceManager) getImmutableFieldChanges(
 // sdkTargetsFromResourceTargets converts the given Kubernetes resource targets to AWS service targets
 func sdkTargetsFromResourceTargets(
 	targets []*svcapitypes.Target,
-) []*svcsdk.Target {
-	var res []*svcsdk.Target
+) ([]*svcsdktypes.Target, error) {
+	var res []*svcsdktypes.Target
 	for _, krTarget := range targets {
-		t := &svcsdk.Target{}
+		t := &svcsdktypes.Target{}
 		if krTarget.ARN != nil {
-			t.SetArn(*krTarget.ARN)
+			t.Arn = krTarget.ARN
 		}
 		if krTarget.BatchParameters != nil {
-			tf1 := &svcsdk.BatchParameters{}
+			tf1 := &svcsdktypes.BatchParameters{}
 			if krTarget.BatchParameters.ArrayProperties != nil {
-				tf1f0 := &svcsdk.BatchArrayProperties{}
+				tf1f0 := &svcsdktypes.BatchArrayProperties{}
 				if krTarget.BatchParameters.ArrayProperties.Size != nil {
-					tf1f0.SetSize(*krTarget.BatchParameters.ArrayProperties.Size)
+					sizeCopy0 := *krTarget.BatchParameters.ArrayProperties.Size
+					if sizeCopy0 > math.MaxInt32 || sizeCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Size is of type int32")
+					}
+					sizeCopy := int32(sizeCopy0)
+					tf1f0.Size = sizeCopy
 				}
-				tf1.SetArrayProperties(tf1f0)
+				tf1.ArrayProperties = tf1f0
 			}
 			if krTarget.BatchParameters.JobDefinition != nil {
-				tf1.SetJobDefinition(*krTarget.BatchParameters.JobDefinition)
+				tf1.JobDefinition = krTarget.BatchParameters.JobDefinition
 			}
 			if krTarget.BatchParameters.JobName != nil {
-				tf1.SetJobName(*krTarget.BatchParameters.JobName)
+				tf1.JobName = krTarget.BatchParameters.JobName
 			}
 			if krTarget.BatchParameters.RetryStrategy != nil {
-				tf1f3 := &svcsdk.BatchRetryStrategy{}
+				tf1f3 := &svcsdktypes.BatchRetryStrategy{}
 				if krTarget.BatchParameters.RetryStrategy.Attempts != nil {
-					tf1f3.SetAttempts(*krTarget.BatchParameters.RetryStrategy.Attempts)
+					attemptsCopy0 := *krTarget.BatchParameters.RetryStrategy.Attempts
+					if attemptsCopy0 > math.MaxInt32 || attemptsCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Attempts is of type int32")
+					}
+					attemptsCopy := int32(attemptsCopy0)
+					tf1f3.Attempts = attemptsCopy
 				}
-				tf1.SetRetryStrategy(tf1f3)
+				tf1.RetryStrategy = tf1f3
 			}
-			t.SetBatchParameters(tf1)
+			t.BatchParameters = tf1
 		}
 		if krTarget.DeadLetterConfig != nil {
-			tf2 := &svcsdk.DeadLetterConfig{}
+			tf2 := &svcsdktypes.DeadLetterConfig{}
 			if krTarget.DeadLetterConfig.ARN != nil {
-				tf2.SetArn(*krTarget.DeadLetterConfig.ARN)
+				tf2.Arn = krTarget.DeadLetterConfig.ARN
 			}
-			t.SetDeadLetterConfig(tf2)
+			t.DeadLetterConfig = tf2
 		}
 		if krTarget.ECSParameters != nil {
-			tf3 := &svcsdk.EcsParameters{}
+			tf3 := &svcsdktypes.EcsParameters{}
 			if krTarget.ECSParameters.CapacityProviderStrategy != nil {
-				tf3f0 := []*svcsdk.CapacityProviderStrategyItem{}
+				tf3f0 := []svcsdktypes.CapacityProviderStrategyItem{}
 				for _, tf3f0iter := range krTarget.ECSParameters.CapacityProviderStrategy {
-					tf3f0elem := &svcsdk.CapacityProviderStrategyItem{}
+					tf3f0elem := &svcsdktypes.CapacityProviderStrategyItem{}
 					if tf3f0iter.Base != nil {
-						tf3f0elem.SetBase(*tf3f0iter.Base)
+						baseCopy0 := *tf3f0iter.Base
+						if baseCopy0 > math.MaxInt32 || baseCopy0 < math.MinInt32 {
+							return nil, fmt.Errorf("error: field base is of type int32")
+						}
+						baseCopy := int32(baseCopy0)
+						tf3f0elem.Base = baseCopy
 					}
 					if tf3f0iter.CapacityProvider != nil {
-						tf3f0elem.SetCapacityProvider(*tf3f0iter.CapacityProvider)
+						tf3f0elem.CapacityProvider = tf3f0iter.CapacityProvider
 					}
 					if tf3f0iter.Weight != nil {
-						tf3f0elem.SetWeight(*tf3f0iter.Weight)
+						weightCopy0 := *tf3f0iter.Weight
+						if weightCopy0 > math.MaxInt32 || weightCopy0 < math.MinInt32 {
+							return nil, fmt.Errorf("error: field weight is of type int32")
+						}
+						weightCopy := int32(weightCopy0)
+						tf3f0elem.Weight = weightCopy
 					}
-					tf3f0 = append(tf3f0, tf3f0elem)
+					tf3f0 = append(tf3f0, *tf3f0elem)
 				}
-				tf3.SetCapacityProviderStrategy(tf3f0)
+				tf3.CapacityProviderStrategy = tf3f0
 			}
 			if krTarget.ECSParameters.EnableECSManagedTags != nil {
-				tf3.SetEnableECSManagedTags(*krTarget.ECSParameters.EnableECSManagedTags)
+				tf3.EnableECSManagedTags = *krTarget.ECSParameters.EnableECSManagedTags
 			}
 			if krTarget.ECSParameters.EnableExecuteCommand != nil {
-				tf3.SetEnableExecuteCommand(*krTarget.ECSParameters.EnableExecuteCommand)
+				tf3.EnableExecuteCommand = *krTarget.ECSParameters.EnableExecuteCommand
 			}
 			if krTarget.ECSParameters.Group != nil {
-				tf3.SetGroup(*krTarget.ECSParameters.Group)
+				tf3.Group = krTarget.ECSParameters.Group
 			}
 			if krTarget.ECSParameters.LaunchType != nil {
-				tf3.SetLaunchType(*krTarget.ECSParameters.LaunchType)
+				tf3.LaunchType = svcsdktypes.LaunchType(*krTarget.ECSParameters.LaunchType)
 			}
 			if krTarget.ECSParameters.NetworkConfiguration != nil {
-				tf3f5 := &svcsdk.NetworkConfiguration{}
+				tf3f5 := &svcsdktypes.NetworkConfiguration{}
 				if krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration != nil {
-					tf3f5f0 := &svcsdk.AwsVpcConfiguration{}
+					tf3f5f0 := &svcsdktypes.AwsVpcConfiguration{}
 					if krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.AssignPublicIP != nil {
-						tf3f5f0.SetAssignPublicIp(*krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.AssignPublicIP)
+						tf3f5f0.AssignPublicIp = svcsdktypes.AssignPublicIp(*krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.AssignPublicIP)
 					}
 					if krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.SecurityGroups != nil {
-						tf3f5f0f1 := []*string{}
-						for _, tf3f5f0f1iter := range krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.SecurityGroups {
-							var tf3f5f0f1elem string
-							tf3f5f0f1elem = *tf3f5f0f1iter
-							tf3f5f0f1 = append(tf3f5f0f1, &tf3f5f0f1elem)
-						}
-						tf3f5f0.SetSecurityGroups(tf3f5f0f1)
+						tf3f5f0.SecurityGroups = aws.ToStringSlice(krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.SecurityGroups)
 					}
 					if krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.Subnets != nil {
-						tf3f5f0f2 := []*string{}
-						for _, tf3f5f0f2iter := range krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.Subnets {
-							var tf3f5f0f2elem string
-							tf3f5f0f2elem = *tf3f5f0f2iter
-							tf3f5f0f2 = append(tf3f5f0f2, &tf3f5f0f2elem)
-						}
-						tf3f5f0.SetSubnets(tf3f5f0f2)
+						tf3f5f0.Subnets = aws.ToStringSlice(krTarget.ECSParameters.NetworkConfiguration.AWSVPCConfiguration.Subnets)
 					}
-					tf3f5.SetAwsvpcConfiguration(tf3f5f0)
+					tf3f5.AwsvpcConfiguration = tf3f5f0
 				}
-				tf3.SetNetworkConfiguration(tf3f5)
+				tf3.NetworkConfiguration = tf3f5
 			}
 			if krTarget.ECSParameters.PlacementConstraints != nil {
-				tf3f6 := []*svcsdk.PlacementConstraint{}
+				tf3f6 := []svcsdktypes.PlacementConstraint{}
 				for _, tf3f6iter := range krTarget.ECSParameters.PlacementConstraints {
-					tf3f6elem := &svcsdk.PlacementConstraint{}
+					tf3f6elem := &svcsdktypes.PlacementConstraint{}
 					if tf3f6iter.Expression != nil {
-						tf3f6elem.SetExpression(*tf3f6iter.Expression)
+						tf3f6elem.Expression = tf3f6iter.Expression
 					}
 					if tf3f6iter.Type != nil {
-						tf3f6elem.SetType(*tf3f6iter.Type)
+						tf3f6elem.Type = svcsdktypes.PlacementConstraintType(*tf3f6iter.Type)
 					}
-					tf3f6 = append(tf3f6, tf3f6elem)
+					tf3f6 = append(tf3f6, *tf3f6elem)
 				}
-				tf3.SetPlacementConstraints(tf3f6)
+				tf3.PlacementConstraints = tf3f6
 			}
 			if krTarget.ECSParameters.PlacementStrategy != nil {
-				tf3f7 := []*svcsdk.PlacementStrategy{}
+				tf3f7 := []svcsdktypes.PlacementStrategy{}
 				for _, tf3f7iter := range krTarget.ECSParameters.PlacementStrategy {
-					tf3f7elem := &svcsdk.PlacementStrategy{}
+					tf3f7elem := &svcsdktypes.PlacementStrategy{}
 					if tf3f7iter.Field != nil {
-						tf3f7elem.SetField(*tf3f7iter.Field)
+						tf3f7elem.Field = tf3f7iter.Field
 					}
 					if tf3f7iter.Type != nil {
-						tf3f7elem.SetType(*tf3f7iter.Type)
+						tf3f7elem.Type = svcsdktypes.PlacementStrategyType(*tf3f7iter.Type)
 					}
-					tf3f7 = append(tf3f7, tf3f7elem)
+					tf3f7 = append(tf3f7, *tf3f7elem)
 				}
-				tf3.SetPlacementStrategy(tf3f7)
+				tf3.PlacementStrategy = tf3f7
 			}
 			if krTarget.ECSParameters.PlatformVersion != nil {
-				tf3.SetPlatformVersion(*krTarget.ECSParameters.PlatformVersion)
+				tf3.PlatformVersion = krTarget.ECSParameters.PlatformVersion
 			}
 			if krTarget.ECSParameters.PropagateTags != nil {
-				tf3.SetPropagateTags(*krTarget.ECSParameters.PropagateTags)
+				tf3.PropagateTags = svcsdktypes.PropagateTags(*krTarget.ECSParameters.PropagateTags)
 			}
 			if krTarget.ECSParameters.ReferenceID != nil {
-				tf3.SetReferenceId(*krTarget.ECSParameters.ReferenceID)
+				tf3.ReferenceId = krTarget.ECSParameters.ReferenceID
 			}
 			if krTarget.ECSParameters.Tags != nil {
-				tf3f11 := []*svcsdk.Tag{}
+				tf3f11 := []svcsdktypes.Tag{}
 				for _, tf3f11iter := range krTarget.ECSParameters.Tags {
-					tf3f11elem := &svcsdk.Tag{}
+					tf3f11elem := &svcsdktypes.Tag{}
 					if tf3f11iter.Key != nil {
-						tf3f11elem.SetKey(*tf3f11iter.Key)
+						tf3f11elem.Key = tf3f11iter.Key
 					}
 					if tf3f11iter.Value != nil {
-						tf3f11elem.SetValue(*tf3f11iter.Value)
+						tf3f11elem.Value = tf3f11iter.Value
 					}
-					tf3f11 = append(tf3f11, tf3f11elem)
+					tf3f11 = append(tf3f11, *tf3f11elem)
 				}
-				tf3.SetTags(tf3f11)
+				tf3.Tags = tf3f11
 			}
 			if krTarget.ECSParameters.TaskCount != nil {
-				tf3.SetTaskCount(*krTarget.ECSParameters.TaskCount)
+				taskCountCopy0 := *krTarget.ECSParameters.TaskCount
+				if taskCountCopy0 > math.MaxInt32 || taskCountCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field TaskCount is of type int32")
+				}
+				taskCountCopy := int32(taskCountCopy0)
+				tf3.TaskCount = &taskCountCopy
 			}
 			if krTarget.ECSParameters.TaskDefinitionARN != nil {
-				tf3.SetTaskDefinitionArn(*krTarget.ECSParameters.TaskDefinitionARN)
+				tf3.TaskDefinitionArn = krTarget.ECSParameters.TaskDefinitionARN
 			}
-			t.SetEcsParameters(tf3)
+			t.EcsParameters = tf3
 		}
 		if krTarget.HTTPParameters != nil {
-			tf4 := &svcsdk.HttpParameters{}
+			tf4 := &svcsdktypes.HttpParameters{}
 			if krTarget.HTTPParameters.HeaderParameters != nil {
-				tf4f0 := map[string]*string{}
-				for tf4f0key, tf4f0valiter := range krTarget.HTTPParameters.HeaderParameters {
-					var tf4f0val string
-					tf4f0val = *tf4f0valiter
-					tf4f0[tf4f0key] = &tf4f0val
-				}
-				tf4.SetHeaderParameters(tf4f0)
+				tf4.HeaderParameters = aws.ToStringMap(krTarget.HTTPParameters.HeaderParameters)
 			}
 			if krTarget.HTTPParameters.PathParameterValues != nil {
-				tf4f1 := []*string{}
-				for _, tf4f1iter := range krTarget.HTTPParameters.PathParameterValues {
-					var tf4f1elem string
-					tf4f1elem = *tf4f1iter
-					tf4f1 = append(tf4f1, &tf4f1elem)
-				}
-				tf4.SetPathParameterValues(tf4f1)
+				tf4.PathParameterValues = aws.ToStringSlice(krTarget.HTTPParameters.PathParameterValues)
 			}
 			if krTarget.HTTPParameters.QueryStringParameters != nil {
-				tf4f2 := map[string]*string{}
-				for tf4f2key, tf4f2valiter := range krTarget.HTTPParameters.QueryStringParameters {
-					var tf4f2val string
-					tf4f2val = *tf4f2valiter
-					tf4f2[tf4f2key] = &tf4f2val
-				}
-				tf4.SetQueryStringParameters(tf4f2)
+				tf4.QueryStringParameters = aws.ToStringMap(krTarget.HTTPParameters.QueryStringParameters)
 			}
-			t.SetHttpParameters(tf4)
+			t.HttpParameters = tf4
 		}
 		if krTarget.ID != nil {
-			t.SetId(*krTarget.ID)
+			t.Id = krTarget.ID
 		}
 		if krTarget.Input != nil {
-			t.SetInput(*krTarget.Input)
+			t.Input = krTarget.Input
 		}
 		if krTarget.InputPath != nil {
-			t.SetInputPath(*krTarget.InputPath)
+			t.InputPath = krTarget.InputPath
 		}
 		if krTarget.InputTransformer != nil {
-			tf8 := &svcsdk.InputTransformer{}
+			tf8 := &svcsdktypes.InputTransformer{}
 			if krTarget.InputTransformer.InputPathsMap != nil {
-				tf8f0 := map[string]*string{}
-				for tf8f0key, tf8f0valiter := range krTarget.InputTransformer.InputPathsMap {
-					var tf8f0val string
-					tf8f0val = *tf8f0valiter
-					tf8f0[tf8f0key] = &tf8f0val
-				}
-				tf8.SetInputPathsMap(tf8f0)
+				tf8.InputPathsMap = aws.ToStringMap(krTarget.InputTransformer.InputPathsMap)
 			}
 			if krTarget.InputTransformer.InputTemplate != nil {
-				tf8.SetInputTemplate(*krTarget.InputTransformer.InputTemplate)
+				tf8.InputTemplate = krTarget.InputTransformer.InputTemplate
 			}
-			t.SetInputTransformer(tf8)
+			t.InputTransformer = tf8
 		}
 		if krTarget.KinesisParameters != nil {
-			tf9 := &svcsdk.KinesisParameters{}
+			tf9 := &svcsdktypes.KinesisParameters{}
 			if krTarget.KinesisParameters.PartitionKeyPath != nil {
-				tf9.SetPartitionKeyPath(*krTarget.KinesisParameters.PartitionKeyPath)
+				tf9.PartitionKeyPath = krTarget.KinesisParameters.PartitionKeyPath
 			}
-			t.SetKinesisParameters(tf9)
+			t.KinesisParameters = tf9
 		}
 		if krTarget.RedshiftDataParameters != nil {
-			tf10 := &svcsdk.RedshiftDataParameters{}
+			tf10 := &svcsdktypes.RedshiftDataParameters{}
 			if krTarget.RedshiftDataParameters.Database != nil {
-				tf10.SetDatabase(*krTarget.RedshiftDataParameters.Database)
+				tf10.Database = krTarget.RedshiftDataParameters.Database
 			}
 			if krTarget.RedshiftDataParameters.DBUser != nil {
-				tf10.SetDbUser(*krTarget.RedshiftDataParameters.DBUser)
+				tf10.DbUser = krTarget.RedshiftDataParameters.DBUser
 			}
 			if krTarget.RedshiftDataParameters.SecretManagerARN != nil {
-				tf10.SetSecretManagerArn(*krTarget.RedshiftDataParameters.SecretManagerARN)
+				tf10.SecretManagerArn = krTarget.RedshiftDataParameters.SecretManagerARN
 			}
 			if krTarget.RedshiftDataParameters.SQL != nil {
-				tf10.SetSql(*krTarget.RedshiftDataParameters.SQL)
+				tf10.Sql = krTarget.RedshiftDataParameters.SQL
 			}
 			if krTarget.RedshiftDataParameters.SQLs != nil {
-				tf10f4 := []*string{}
-				for _, tf10f4iter := range krTarget.RedshiftDataParameters.SQLs {
-					var tf10f4elem string
-					tf10f4elem = *tf10f4iter
-					tf10f4 = append(tf10f4, &tf10f4elem)
-				}
-				tf10.SetSqls(tf10f4)
+				tf10.Sqls = aws.ToStringSlice(krTarget.RedshiftDataParameters.SQLs)
 			}
 			if krTarget.RedshiftDataParameters.StatementName != nil {
-				tf10.SetStatementName(*krTarget.RedshiftDataParameters.StatementName)
+				tf10.StatementName = krTarget.RedshiftDataParameters.StatementName
 			}
 			if krTarget.RedshiftDataParameters.WithEvent != nil {
-				tf10.SetWithEvent(*krTarget.RedshiftDataParameters.WithEvent)
+				tf10.WithEvent = *krTarget.RedshiftDataParameters.WithEvent
 			}
-			t.SetRedshiftDataParameters(tf10)
+			t.RedshiftDataParameters = tf10
 		}
 		if krTarget.RetryPolicy != nil {
-			tf11 := &svcsdk.RetryPolicy{}
+			tf11 := &svcsdktypes.RetryPolicy{}
 			if krTarget.RetryPolicy.MaximumEventAgeInSeconds != nil {
-				tf11.SetMaximumEventAgeInSeconds(*krTarget.RetryPolicy.MaximumEventAgeInSeconds)
+				maximumEventAgeInSecondsCopy0 := *krTarget.RetryPolicy.MaximumEventAgeInSeconds
+				if maximumEventAgeInSecondsCopy0 > math.MaxInt32 || maximumEventAgeInSecondsCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field MaximumEventAgeInSeconds is of type int32")
+				}
+				maximumEventAgeInSecondsCopy := int32(maximumEventAgeInSecondsCopy0)
+				tf11.MaximumEventAgeInSeconds = &maximumEventAgeInSecondsCopy
 			}
 			if krTarget.RetryPolicy.MaximumRetryAttempts != nil {
-				tf11.SetMaximumRetryAttempts(*krTarget.RetryPolicy.MaximumRetryAttempts)
+				maximumRetryAttemptsCopy0 := *krTarget.RetryPolicy.MaximumRetryAttempts
+				if maximumRetryAttemptsCopy0 > math.MaxInt32 || maximumRetryAttemptsCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field MaximumRetryAttempts is of type int32")
+				}
+				maximumRetryAttemptsCopy := int32(maximumRetryAttemptsCopy0)
+				tf11.MaximumRetryAttempts = &maximumRetryAttemptsCopy
 			}
-			t.SetRetryPolicy(tf11)
+			t.RetryPolicy = tf11
 		}
 		if krTarget.RoleARN != nil {
-			t.SetRoleArn(*krTarget.RoleARN)
+			t.RoleArn = krTarget.RoleARN
 		}
 		if krTarget.RunCommandParameters != nil {
-			tf13 := &svcsdk.RunCommandParameters{}
+			tf13 := &svcsdktypes.RunCommandParameters{}
 			if krTarget.RunCommandParameters.RunCommandTargets != nil {
-				tf13f0 := []*svcsdk.RunCommandTarget{}
+				tf13f0 := []svcsdktypes.RunCommandTarget{}
 				for _, tf13f0iter := range krTarget.RunCommandParameters.RunCommandTargets {
-					tf13f0elem := &svcsdk.RunCommandTarget{}
+					tf13f0elem := &svcsdktypes.RunCommandTarget{}
 					if tf13f0iter.Key != nil {
-						tf13f0elem.SetKey(*tf13f0iter.Key)
+						tf13f0elem.Key = tf13f0iter.Key
 					}
 					if tf13f0iter.Values != nil {
-						tf13f0elemf1 := []*string{}
-						for _, tf13f0elemf1iter := range tf13f0iter.Values {
-							var tf13f0elemf1elem string
-							tf13f0elemf1elem = *tf13f0elemf1iter
-							tf13f0elemf1 = append(tf13f0elemf1, &tf13f0elemf1elem)
-						}
-						tf13f0elem.SetValues(tf13f0elemf1)
+						tf13f0elem.Values = aws.ToStringSlice(tf13f0iter.Values)
 					}
-					tf13f0 = append(tf13f0, tf13f0elem)
+					tf13f0 = append(tf13f0, *tf13f0elem)
 				}
-				tf13.SetRunCommandTargets(tf13f0)
+				tf13.RunCommandTargets = tf13f0
 			}
-			t.SetRunCommandParameters(tf13)
+			t.RunCommandParameters = tf13
 		}
 		if krTarget.SageMakerPipelineParameters != nil {
-			tf14 := &svcsdk.SageMakerPipelineParameters{}
+			tf14 := &svcsdktypes.SageMakerPipelineParameters{}
 			if krTarget.SageMakerPipelineParameters.PipelineParameterList != nil {
-				tf14f0 := []*svcsdk.SageMakerPipelineParameter{}
+				tf14f0 := []svcsdktypes.SageMakerPipelineParameter{}
 				for _, tf14f0iter := range krTarget.SageMakerPipelineParameters.PipelineParameterList {
-					tf14f0elem := &svcsdk.SageMakerPipelineParameter{}
+					tf14f0elem := &svcsdktypes.SageMakerPipelineParameter{}
 					if tf14f0iter.Name != nil {
-						tf14f0elem.SetName(*tf14f0iter.Name)
+						tf14f0elem.Name = tf14f0iter.Name
 					}
 					if tf14f0iter.Value != nil {
-						tf14f0elem.SetValue(*tf14f0iter.Value)
+						tf14f0elem.Value = tf14f0iter.Value
 					}
-					tf14f0 = append(tf14f0, tf14f0elem)
+					tf14f0 = append(tf14f0, *tf14f0elem)
 				}
-				tf14.SetPipelineParameterList(tf14f0)
+				tf14.PipelineParameterList = tf14f0
 			}
-			t.SetSageMakerPipelineParameters(tf14)
+			t.SageMakerPipelineParameters = tf14
 		}
 		if krTarget.SQSParameters != nil {
-			tf15 := &svcsdk.SqsParameters{}
+			tf15 := &svcsdktypes.SqsParameters{}
 			if krTarget.SQSParameters.MessageGroupID != nil {
-				tf15.SetMessageGroupId(*krTarget.SQSParameters.MessageGroupID)
+				tf15.MessageGroupId = krTarget.SQSParameters.MessageGroupID
 			}
-			t.SetSqsParameters(tf15)
+			t.SqsParameters = tf15
 		}
 
 		res = append(res, t)
 	}
-	return res
+	return res, nil
 }
 
 // resourceTargetsFromSDKTargets converts the given AWS service targets to Kubernetes resource targets
 func resourceTargetsFromSDKTargets(
-	targets []*svcsdk.Target,
+	targets []*svcsdktypes.Target,
 ) []*svcapitypes.Target {
 	var res []*svcapitypes.Target
 	for _, sdkTarget := range targets {
@@ -904,9 +893,8 @@ func resourceTargetsFromSDKTargets(
 			tf1 := &svcapitypes.BatchParameters{}
 			if sdkTarget.BatchParameters.ArrayProperties != nil {
 				tf1f0 := &svcapitypes.BatchArrayProperties{}
-				if sdkTarget.BatchParameters.ArrayProperties.Size != nil {
-					tf1f0.Size = sdkTarget.BatchParameters.ArrayProperties.Size
-				}
+				sizeCopy := int64(sdkTarget.BatchParameters.ArrayProperties.Size)
+				tf1f0.Size = &sizeCopy
 				tf1.ArrayProperties = tf1f0
 			}
 			if sdkTarget.BatchParameters.JobDefinition != nil {
@@ -917,9 +905,8 @@ func resourceTargetsFromSDKTargets(
 			}
 			if sdkTarget.BatchParameters.RetryStrategy != nil {
 				tf1f3 := &svcapitypes.BatchRetryStrategy{}
-				if sdkTarget.BatchParameters.RetryStrategy.Attempts != nil {
-					tf1f3.Attempts = sdkTarget.BatchParameters.RetryStrategy.Attempts
-				}
+				attemptsCopy := int64(sdkTarget.BatchParameters.RetryStrategy.Attempts)
+				tf1f3.Attempts = &attemptsCopy
 				tf1.RetryStrategy = tf1f3
 			}
 			t.BatchParameters = tf1
@@ -937,55 +924,37 @@ func resourceTargetsFromSDKTargets(
 				tf3f0 := []*svcapitypes.CapacityProviderStrategyItem{}
 				for _, tf3f0iter := range sdkTarget.EcsParameters.CapacityProviderStrategy {
 					tf3f0elem := &svcapitypes.CapacityProviderStrategyItem{}
-					if tf3f0iter.Base != nil {
-						tf3f0elem.Base = tf3f0iter.Base
-					}
+					baseCopy := int64(tf3f0iter.Base)
+					tf3f0elem.Base = &baseCopy
 					if tf3f0iter.CapacityProvider != nil {
 						tf3f0elem.CapacityProvider = tf3f0iter.CapacityProvider
 					}
-					if tf3f0iter.Weight != nil {
-						tf3f0elem.Weight = tf3f0iter.Weight
-					}
+					weightCopy := int64(tf3f0iter.Weight)
+					tf3f0elem.Weight = &weightCopy
 					tf3f0 = append(tf3f0, tf3f0elem)
 				}
 				tf3.CapacityProviderStrategy = tf3f0
 			}
-			if sdkTarget.EcsParameters.EnableECSManagedTags != nil {
-				tf3.EnableECSManagedTags = sdkTarget.EcsParameters.EnableECSManagedTags
-			}
-			if sdkTarget.EcsParameters.EnableExecuteCommand != nil {
-				tf3.EnableExecuteCommand = sdkTarget.EcsParameters.EnableExecuteCommand
-			}
+			tf3.EnableECSManagedTags = &sdkTarget.EcsParameters.EnableECSManagedTags
+			tf3.EnableExecuteCommand = &sdkTarget.EcsParameters.EnableExecuteCommand
 			if sdkTarget.EcsParameters.Group != nil {
 				tf3.Group = sdkTarget.EcsParameters.Group
 			}
-			if sdkTarget.EcsParameters.LaunchType != nil {
-				tf3.LaunchType = sdkTarget.EcsParameters.LaunchType
+			if sdkTarget.EcsParameters.LaunchType != "" {
+				tf3.LaunchType = aws.String(string(sdkTarget.EcsParameters.LaunchType))
 			}
 			if sdkTarget.EcsParameters.NetworkConfiguration != nil {
 				tf3f5 := &svcapitypes.NetworkConfiguration{}
 				if sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration != nil {
 					tf3f5f0 := &svcapitypes.AWSVPCConfiguration{}
-					if sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.AssignPublicIp != nil {
-						tf3f5f0.AssignPublicIP = sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.AssignPublicIp
+					if sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.AssignPublicIp != "" {
+						tf3f5f0.AssignPublicIP = aws.String(string(sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.AssignPublicIp))
 					}
 					if sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.SecurityGroups != nil {
-						tf3f5f0f1 := []*string{}
-						for _, tf3f5f0f1iter := range sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.SecurityGroups {
-							var tf3f5f0f1elem string
-							tf3f5f0f1elem = *tf3f5f0f1iter
-							tf3f5f0f1 = append(tf3f5f0f1, &tf3f5f0f1elem)
-						}
-						tf3f5f0.SecurityGroups = tf3f5f0f1
+						tf3f5f0.SecurityGroups = aws.StringSlice(sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.SecurityGroups)
 					}
 					if sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.Subnets != nil {
-						tf3f5f0f2 := []*string{}
-						for _, tf3f5f0f2iter := range sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.Subnets {
-							var tf3f5f0f2elem string
-							tf3f5f0f2elem = *tf3f5f0f2iter
-							tf3f5f0f2 = append(tf3f5f0f2, &tf3f5f0f2elem)
-						}
-						tf3f5f0.Subnets = tf3f5f0f2
+						tf3f5f0.Subnets = aws.StringSlice(sdkTarget.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.Subnets)
 					}
 					tf3f5.AWSVPCConfiguration = tf3f5f0
 				}
@@ -998,8 +967,8 @@ func resourceTargetsFromSDKTargets(
 					if tf3f6iter.Expression != nil {
 						tf3f6elem.Expression = tf3f6iter.Expression
 					}
-					if tf3f6iter.Type != nil {
-						tf3f6elem.Type = tf3f6iter.Type
+					if tf3f6iter.Type != "" {
+						tf3f6elem.Type = aws.String(string(tf3f6iter.Type))
 					}
 					tf3f6 = append(tf3f6, tf3f6elem)
 				}
@@ -1012,8 +981,8 @@ func resourceTargetsFromSDKTargets(
 					if tf3f7iter.Field != nil {
 						tf3f7elem.Field = tf3f7iter.Field
 					}
-					if tf3f7iter.Type != nil {
-						tf3f7elem.Type = tf3f7iter.Type
+					if tf3f7iter.Type != "" {
+						tf3f7elem.Type = aws.String(string(tf3f7iter.Type))
 					}
 					tf3f7 = append(tf3f7, tf3f7elem)
 				}
@@ -1022,8 +991,8 @@ func resourceTargetsFromSDKTargets(
 			if sdkTarget.EcsParameters.PlatformVersion != nil {
 				tf3.PlatformVersion = sdkTarget.EcsParameters.PlatformVersion
 			}
-			if sdkTarget.EcsParameters.PropagateTags != nil {
-				tf3.PropagateTags = sdkTarget.EcsParameters.PropagateTags
+			if sdkTarget.EcsParameters.PropagateTags != "" {
+				tf3.PropagateTags = aws.String(string(sdkTarget.EcsParameters.PropagateTags))
 			}
 			if sdkTarget.EcsParameters.ReferenceId != nil {
 				tf3.ReferenceID = sdkTarget.EcsParameters.ReferenceId
@@ -1043,7 +1012,8 @@ func resourceTargetsFromSDKTargets(
 				tf3.Tags = tf3f11
 			}
 			if sdkTarget.EcsParameters.TaskCount != nil {
-				tf3.TaskCount = sdkTarget.EcsParameters.TaskCount
+				taskCountCopy := int64(*sdkTarget.EcsParameters.TaskCount)
+				tf3.TaskCount = &taskCountCopy
 			}
 			if sdkTarget.EcsParameters.TaskDefinitionArn != nil {
 				tf3.TaskDefinitionARN = sdkTarget.EcsParameters.TaskDefinitionArn
@@ -1053,31 +1023,13 @@ func resourceTargetsFromSDKTargets(
 		if sdkTarget.HttpParameters != nil {
 			tf4 := &svcapitypes.HTTPParameters{}
 			if sdkTarget.HttpParameters.HeaderParameters != nil {
-				tf4f0 := map[string]*string{}
-				for tf4f0key, tf4f0valiter := range sdkTarget.HttpParameters.HeaderParameters {
-					var tf4f0val string
-					tf4f0val = *tf4f0valiter
-					tf4f0[tf4f0key] = &tf4f0val
-				}
-				tf4.HeaderParameters = tf4f0
+				tf4.HeaderParameters = aws.StringMap(sdkTarget.HttpParameters.HeaderParameters)
 			}
 			if sdkTarget.HttpParameters.PathParameterValues != nil {
-				tf4f1 := []*string{}
-				for _, tf4f1iter := range sdkTarget.HttpParameters.PathParameterValues {
-					var tf4f1elem string
-					tf4f1elem = *tf4f1iter
-					tf4f1 = append(tf4f1, &tf4f1elem)
-				}
-				tf4.PathParameterValues = tf4f1
+				tf4.PathParameterValues = aws.StringSlice(sdkTarget.HttpParameters.PathParameterValues)
 			}
 			if sdkTarget.HttpParameters.QueryStringParameters != nil {
-				tf4f2 := map[string]*string{}
-				for tf4f2key, tf4f2valiter := range sdkTarget.HttpParameters.QueryStringParameters {
-					var tf4f2val string
-					tf4f2val = *tf4f2valiter
-					tf4f2[tf4f2key] = &tf4f2val
-				}
-				tf4.QueryStringParameters = tf4f2
+				tf4.QueryStringParameters = aws.StringMap(sdkTarget.HttpParameters.QueryStringParameters)
 			}
 			t.HTTPParameters = tf4
 		}
@@ -1093,13 +1045,7 @@ func resourceTargetsFromSDKTargets(
 		if sdkTarget.InputTransformer != nil {
 			tf8 := &svcapitypes.InputTransformer{}
 			if sdkTarget.InputTransformer.InputPathsMap != nil {
-				tf8f0 := map[string]*string{}
-				for tf8f0key, tf8f0valiter := range sdkTarget.InputTransformer.InputPathsMap {
-					var tf8f0val string
-					tf8f0val = *tf8f0valiter
-					tf8f0[tf8f0key] = &tf8f0val
-				}
-				tf8.InputPathsMap = tf8f0
+				tf8.InputPathsMap = aws.StringMap(sdkTarget.InputTransformer.InputPathsMap)
 			}
 			if sdkTarget.InputTransformer.InputTemplate != nil {
 				tf8.InputTemplate = sdkTarget.InputTransformer.InputTemplate
@@ -1128,29 +1074,23 @@ func resourceTargetsFromSDKTargets(
 				tf10.SQL = sdkTarget.RedshiftDataParameters.Sql
 			}
 			if sdkTarget.RedshiftDataParameters.Sqls != nil {
-				tf10f4 := []*string{}
-				for _, tf10f4iter := range sdkTarget.RedshiftDataParameters.Sqls {
-					var tf10f4elem string
-					tf10f4elem = *tf10f4iter
-					tf10f4 = append(tf10f4, &tf10f4elem)
-				}
-				tf10.SQLs = tf10f4
+				tf10.SQLs = aws.StringSlice(sdkTarget.RedshiftDataParameters.Sqls)
 			}
 			if sdkTarget.RedshiftDataParameters.StatementName != nil {
 				tf10.StatementName = sdkTarget.RedshiftDataParameters.StatementName
 			}
-			if sdkTarget.RedshiftDataParameters.WithEvent != nil {
-				tf10.WithEvent = sdkTarget.RedshiftDataParameters.WithEvent
-			}
+			tf10.WithEvent = &sdkTarget.RedshiftDataParameters.WithEvent
 			t.RedshiftDataParameters = tf10
 		}
 		if sdkTarget.RetryPolicy != nil {
 			tf11 := &svcapitypes.RetryPolicy{}
 			if sdkTarget.RetryPolicy.MaximumEventAgeInSeconds != nil {
-				tf11.MaximumEventAgeInSeconds = sdkTarget.RetryPolicy.MaximumEventAgeInSeconds
+				maximumEventAgeInSecondsCopy := int64(*sdkTarget.RetryPolicy.MaximumEventAgeInSeconds)
+				tf11.MaximumEventAgeInSeconds = &maximumEventAgeInSecondsCopy
 			}
 			if sdkTarget.RetryPolicy.MaximumRetryAttempts != nil {
-				tf11.MaximumRetryAttempts = sdkTarget.RetryPolicy.MaximumRetryAttempts
+				maximumRetryAttemptsCopy := int64(*sdkTarget.RetryPolicy.MaximumRetryAttempts)
+				tf11.MaximumRetryAttempts = &maximumRetryAttemptsCopy
 			}
 			t.RetryPolicy = tf11
 		}
@@ -1167,13 +1107,7 @@ func resourceTargetsFromSDKTargets(
 						tf13f0elem.Key = tf13f0iter.Key
 					}
 					if tf13f0iter.Values != nil {
-						tf13f0elemf1 := []*string{}
-						for _, tf13f0elemf1iter := range tf13f0iter.Values {
-							var tf13f0elemf1elem string
-							tf13f0elemf1elem = *tf13f0elemf1iter
-							tf13f0elemf1 = append(tf13f0elemf1, &tf13f0elemf1elem)
-						}
-						tf13f0elem.Values = tf13f0elemf1
+						tf13f0elem.Values = aws.StringSlice(tf13f0iter.Values)
 					}
 					tf13f0 = append(tf13f0, tf13f0elem)
 				}

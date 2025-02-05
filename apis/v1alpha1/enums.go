@@ -18,13 +18,13 @@ package v1alpha1
 type APIDestinationHTTPMethod string
 
 const (
-	APIDestinationHTTPMethod_POST    APIDestinationHTTPMethod = "POST"
+	APIDestinationHTTPMethod_DELETE  APIDestinationHTTPMethod = "DELETE"
 	APIDestinationHTTPMethod_GET     APIDestinationHTTPMethod = "GET"
 	APIDestinationHTTPMethod_HEAD    APIDestinationHTTPMethod = "HEAD"
 	APIDestinationHTTPMethod_OPTIONS APIDestinationHTTPMethod = "OPTIONS"
-	APIDestinationHTTPMethod_PUT     APIDestinationHTTPMethod = "PUT"
 	APIDestinationHTTPMethod_PATCH   APIDestinationHTTPMethod = "PATCH"
-	APIDestinationHTTPMethod_DELETE  APIDestinationHTTPMethod = "DELETE"
+	APIDestinationHTTPMethod_POST    APIDestinationHTTPMethod = "POST"
+	APIDestinationHTTPMethod_PUT     APIDestinationHTTPMethod = "PUT"
 )
 
 type APIDestinationState string
@@ -37,27 +37,27 @@ const (
 type ArchiveState string
 
 const (
-	ArchiveState_ENABLED       ArchiveState = "ENABLED"
-	ArchiveState_DISABLED      ArchiveState = "DISABLED"
-	ArchiveState_CREATING      ArchiveState = "CREATING"
-	ArchiveState_UPDATING      ArchiveState = "UPDATING"
 	ArchiveState_CREATE_FAILED ArchiveState = "CREATE_FAILED"
+	ArchiveState_CREATING      ArchiveState = "CREATING"
+	ArchiveState_DISABLED      ArchiveState = "DISABLED"
+	ArchiveState_ENABLED       ArchiveState = "ENABLED"
 	ArchiveState_UPDATE_FAILED ArchiveState = "UPDATE_FAILED"
+	ArchiveState_UPDATING      ArchiveState = "UPDATING"
 )
 
 type AssignPublicIP string
 
 const (
-	AssignPublicIP_ENABLED  AssignPublicIP = "ENABLED"
 	AssignPublicIP_DISABLED AssignPublicIP = "DISABLED"
+	AssignPublicIP_ENABLED  AssignPublicIP = "ENABLED"
 )
 
 type ConnectionAuthorizationType string
 
 const (
+	ConnectionAuthorizationType_API_KEY                  ConnectionAuthorizationType = "API_KEY"
 	ConnectionAuthorizationType_BASIC                    ConnectionAuthorizationType = "BASIC"
 	ConnectionAuthorizationType_OAUTH_CLIENT_CREDENTIALS ConnectionAuthorizationType = "OAUTH_CLIENT_CREDENTIALS"
-	ConnectionAuthorizationType_API_KEY                  ConnectionAuthorizationType = "API_KEY"
 )
 
 type ConnectionOAuthHTTPMethod string
@@ -71,41 +71,43 @@ const (
 type ConnectionState string
 
 const (
-	ConnectionState_CREATING      ConnectionState = "CREATING"
-	ConnectionState_UPDATING      ConnectionState = "UPDATING"
-	ConnectionState_DELETING      ConnectionState = "DELETING"
-	ConnectionState_AUTHORIZED    ConnectionState = "AUTHORIZED"
-	ConnectionState_DEAUTHORIZED  ConnectionState = "DEAUTHORIZED"
-	ConnectionState_AUTHORIZING   ConnectionState = "AUTHORIZING"
-	ConnectionState_DEAUTHORIZING ConnectionState = "DEAUTHORIZING"
+	ConnectionState_ACTIVE              ConnectionState = "ACTIVE"
+	ConnectionState_AUTHORIZED          ConnectionState = "AUTHORIZED"
+	ConnectionState_AUTHORIZING         ConnectionState = "AUTHORIZING"
+	ConnectionState_CREATING            ConnectionState = "CREATING"
+	ConnectionState_DEAUTHORIZED        ConnectionState = "DEAUTHORIZED"
+	ConnectionState_DEAUTHORIZING       ConnectionState = "DEAUTHORIZING"
+	ConnectionState_DELETING            ConnectionState = "DELETING"
+	ConnectionState_FAILED_CONNECTIVITY ConnectionState = "FAILED_CONNECTIVITY"
+	ConnectionState_UPDATING            ConnectionState = "UPDATING"
 )
 
 type EndpointState string
 
 const (
 	EndpointState_ACTIVE        EndpointState = "ACTIVE"
-	EndpointState_CREATING      EndpointState = "CREATING"
-	EndpointState_UPDATING      EndpointState = "UPDATING"
-	EndpointState_DELETING      EndpointState = "DELETING"
 	EndpointState_CREATE_FAILED EndpointState = "CREATE_FAILED"
-	EndpointState_UPDATE_FAILED EndpointState = "UPDATE_FAILED"
+	EndpointState_CREATING      EndpointState = "CREATING"
 	EndpointState_DELETE_FAILED EndpointState = "DELETE_FAILED"
+	EndpointState_DELETING      EndpointState = "DELETING"
+	EndpointState_UPDATE_FAILED EndpointState = "UPDATE_FAILED"
+	EndpointState_UPDATING      EndpointState = "UPDATING"
 )
 
 type EventSourceState string
 
 const (
-	EventSourceState_PENDING EventSourceState = "PENDING"
 	EventSourceState_ACTIVE  EventSourceState = "ACTIVE"
 	EventSourceState_DELETED EventSourceState = "DELETED"
+	EventSourceState_PENDING EventSourceState = "PENDING"
 )
 
 type LaunchType string
 
 const (
 	LaunchType_EC2      LaunchType = "EC2"
-	LaunchType_FARGATE  LaunchType = "FARGATE"
 	LaunchType_EXTERNAL LaunchType = "EXTERNAL"
+	LaunchType_FARGATE  LaunchType = "FARGATE"
 )
 
 type PlacementConstraintType string
@@ -118,9 +120,9 @@ const (
 type PlacementStrategyType string
 
 const (
+	PlacementStrategyType_binpack PlacementStrategyType = "binpack"
 	PlacementStrategyType_random  PlacementStrategyType = "random"
 	PlacementStrategyType_spread  PlacementStrategyType = "spread"
-	PlacementStrategyType_binpack PlacementStrategyType = "binpack"
 )
 
 type PropagateTags string
@@ -132,25 +134,25 @@ const (
 type ReplayState string
 
 const (
-	ReplayState_STARTING   ReplayState = "STARTING"
-	ReplayState_RUNNING    ReplayState = "RUNNING"
+	ReplayState_CANCELLED  ReplayState = "CANCELLED"
 	ReplayState_CANCELLING ReplayState = "CANCELLING"
 	ReplayState_COMPLETED  ReplayState = "COMPLETED"
-	ReplayState_CANCELLED  ReplayState = "CANCELLED"
 	ReplayState_FAILED     ReplayState = "FAILED"
+	ReplayState_RUNNING    ReplayState = "RUNNING"
+	ReplayState_STARTING   ReplayState = "STARTING"
 )
 
 type ReplicationState string
 
 const (
-	ReplicationState_ENABLED  ReplicationState = "ENABLED"
 	ReplicationState_DISABLED ReplicationState = "DISABLED"
+	ReplicationState_ENABLED  ReplicationState = "ENABLED"
 )
 
 type RuleState string
 
 const (
-	RuleState_ENABLED                                       RuleState = "ENABLED"
 	RuleState_DISABLED                                      RuleState = "DISABLED"
+	RuleState_ENABLED                                       RuleState = "ENABLED"
 	RuleState_ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS RuleState = "ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS"
 )

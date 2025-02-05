@@ -18,7 +18,8 @@ import (
 	"fmt"
 
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 )
@@ -26,8 +27,8 @@ import (
 // TerminalStatuses are the status strings that are terminal states for an
 // Archive
 var TerminalStatuses = []string{
-	svcsdk.ArchiveStateCreateFailed,
-	svcsdk.ArchiveStateUpdateFailed,
+	string(svcsdktypes.ArchiveStateCreateFailed),
+	string(svcsdktypes.ArchiveStateUpdateFailed),
 }
 
 // archiveInTerminalState returns whether the supplied Archive is in a terminal
@@ -46,28 +47,29 @@ func archiveInTerminalState(r *resource) bool {
 }
 
 // archiveAvailable returns true if the supplied Archive is in an available
-// status
+// status and can be modified
 func archiveAvailable(r *resource) bool {
 	if r.ko.Status.State == nil {
 		return false
 	}
 	state := *r.ko.Status.State
-	return state == svcsdk.ArchiveStateEnabled || state == svcsdk.ArchiveStateDisabled
+	// Archive can be modified when ENABLED or DISABLED
+	return state == string(svcsdktypes.ArchiveStateEnabled) ||
+		state == string(svcsdktypes.ArchiveStateDisabled)
 }
 
-// archiveCreating returns true if the supplied Archive is in the process of
+// archiveModifying returns true if the supplied Archive is in the process of
 // being created
-func archiveCreating(r *resource) bool {
+func archiveModifying(r *resource) bool {
 	if r.ko.Status.State == nil {
 		return false
 	}
 	state := *r.ko.Status.State
-	return state == svcsdk.ArchiveStateCreating
+	return state == string(svcsdktypes.ArchiveStateCreating) || state == string(svcsdktypes.ArchiveStateUpdating)
 }
 
 // requeueWaitUntilCanModify returns a `ackrequeue.RequeueNeededAfter` struct
-// explaining the Archive cannot be modified until it reaches an available
-// status.
+// explaining the Archive cannot be modified until it reaches an available status
 func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeededAfter {
 	if r.ko.Status.State == nil {
 		return nil
@@ -90,14 +92,14 @@ func unsetRemovedSpecFields(
 	input *svcsdk.UpdateArchiveInput,
 ) {
 	if spec.EventPattern == nil {
-		input.SetEventPattern("")
+		input.EventPattern = nil
 	}
 
 	if spec.Description == nil {
-		input.SetDescription("")
+		input.Description = nil
 	}
 
 	if spec.RetentionDays == nil {
-		input.SetRetentionDays(0)
+		input.RetentionDays = nil
 	}
 }

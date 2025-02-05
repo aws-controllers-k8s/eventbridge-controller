@@ -6,6 +6,14 @@ ignore:
       - ApiDestination
       - Connection
       - PartnerEventSource
+  field_paths:
+      - CreateEventBusInput.DeadLetterConfig
+      - CreateEventBusInput.KmsKeyIdentifier
+      - CreateEventBusOutput.DeadLetterConfig
+      - CreateEventBusOutput.KmsKeyIdentifier
+      - Target.AppSyncParameters
+      - CreateEventBusOutput.Description
+      - CreateEventBusInput.Description
 operations:
   PutRule:
     operation_type:

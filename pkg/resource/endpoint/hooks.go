@@ -20,12 +20,11 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/arn"
-	"github.com/aws/aws-sdk-go/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"golang.org/x/exp/slices"
 
-	svcsdk "github.com/aws/aws-sdk-go/service/eventbridge"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/eventbridge-controller/pkg/tags"
@@ -37,17 +36,17 @@ const (
 
 var (
 	requeueWaitWhileCreating = ackrequeue.NeededAfter(
-		fmt.Errorf("endpoint in status %q, requeueing", svcsdk.EndpointStateCreating),
+		fmt.Errorf("endpoint in status %q, requeueing", svcsdktypes.EndpointStateCreating),
 		defaultRequeueDelay,
 	)
 
 	requeueWaitWhileUpdating = ackrequeue.NeededAfter(
-		fmt.Errorf("endpoint in status %q, cannot be modified or deleted", svcsdk.EndpointStateUpdating),
+		fmt.Errorf("endpoint in status %q, cannot be modified or deleted", svcsdktypes.EndpointStateUpdating),
 		defaultRequeueDelay,
 	)
 
 	requeueWaitWhileDeleting = ackrequeue.NeededAfter(
-		fmt.Errorf("endpoint in status %q, cannot be modified or deleted", svcsdk.EndpointStateDeleting),
+		fmt.Errorf("endpoint in status %q, cannot be modified or deleted", svcsdktypes.EndpointStateDeleting),
 		defaultRequeueDelay,
 	)
 )
@@ -118,7 +117,7 @@ func endpointAvailable(r *resource) bool {
 		return false
 	}
 	state := *r.ko.Status.State
-	return state == svcsdk.EndpointStateActive
+	return state == string(svcsdktypes.EndpointStateActive)
 }
 
 // endpointInMutatingState returns true if the supplied Endpoint is in the process of
@@ -128,7 +127,7 @@ func endpointInMutatingState(r *resource) bool {
 		return false
 	}
 	state := *r.ko.Status.State
-	return state == svcsdk.EndpointStateCreating || state == svcsdk.EndpointStateUpdating || state == svcsdk.EndpointStateDeleting
+	return state == string(svcsdktypes.EndpointStateCreating) || state == string(svcsdktypes.EndpointStateUpdating) || state == string(svcsdktypes.EndpointStateDeleting)
 }
 
 // requeueWaitUntilCanModify returns a `ackrequeue.RequeueNeededAfter` struct
@@ -150,17 +149,17 @@ func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeededAfter {
 func unsetRemovedSpecFields(
 	delta *ackcompare.Delta,
 	spec v1alpha1.EndpointSpec,
-	input *eventbridge.UpdateEndpointInput,
+	input *svcsdk.UpdateEndpointInput,
 ) {
 	if delta.DifferentAt("Spec.Description") {
 		if spec.Description == nil {
-			input.SetDescription("")
+			input.Description = nil
 		}
 	}
 
 	if delta.DifferentAt("Spec.ReplicationConfig") {
 		if spec.ReplicationConfig == nil {
-			input.SetReplicationConfig(&eventbridge.ReplicationConfig{State: aws.String("ENABLED")})
+			input.ReplicationConfig = &svcsdktypes.ReplicationConfig{State: svcsdktypes.ReplicationStateEnabled}
 		}
 	}
 }
