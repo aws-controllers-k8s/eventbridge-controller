@@ -26,17 +26,27 @@ import (
 type ArchiveSpec struct {
 
 	// A description for the archive.
+
 	Description *string `json:"description,omitempty"`
 	// An event pattern to use to filter events sent to the archive.
+
 	EventPattern *string `json:"eventPattern,omitempty"`
 	// The ARN of the event bus that sends events to the archive.
-	EventSourceARN *string                                  `json:"eventSourceARN,omitempty"`
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+
+	EventSourceARN *string `json:"eventSourceARN,omitempty"`
+
 	EventSourceRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"eventSourceRef,omitempty"`
 	// The name for the archive to create.
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
+
 	Name *string `json:"name"`
 	// The number of days to retain events for. Default value is 0. If set to 0,
 	// events are retained indefinitely
+
 	RetentionDays *int64 `json:"retentionDays,omitempty"`
 }
 
@@ -47,7 +57,7 @@ type ArchiveStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource
