@@ -61,13 +61,8 @@ spec:
               in the Amazon EventBridge User Guide .
             properties:
               description:
-                description: A description of the global endpoint.
                 type: string
               eventBuses:
-                description: |-
-                  Define the event buses used.
-
-                  The names of the event buses must be identical in each Region.
                 items:
                   description: The event buses the endpoint is associated with.
                   properties:
@@ -76,23 +71,20 @@ spec:
                   type: object
                 type: array
               name:
-                description: The name of the global endpoint. For example, "Name":"us-east-2-custom_bus_A-endpoint".
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               replicationConfig:
-                description: |-
-                  Enable or disable event replication. The default state is ENABLED which means
-                  you must supply a RoleArn. If you don't have a RoleArn or you don't want
-                  event replication enabled, set the state to DISABLED.
+                description: Endpoints can replicate all events to the secondary Region.
                 properties:
                   state:
                     type: string
                 type: object
               roleARN:
-                description: The ARN of the role used for replication.
                 type: string
               routingConfig:
-                description: Configure the routing policy, including the health check
-                  and secondary Region..
+                description: The routing configuration of the endpoint.
                 properties:
                   failoverConfig:
                     description: |-
@@ -154,7 +146,7 @@ spec:
                 type: object
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource

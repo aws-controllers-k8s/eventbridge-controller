@@ -33,6 +33,7 @@ type EventBusSpec struct {
 
 	// If you are creating a partner event bus, this specifies the partner event
 	// source that the new event bus will be matched with.
+
 	EventSourceName *string `json:"eventSourceName,omitempty"`
 	// The name of the new event bus.
 	//
@@ -43,9 +44,13 @@ type EventBusSpec struct {
 	//
 	// You can't use the name default for a custom event bus, as this name is already
 	// used for your account's default event bus.
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
+
 	Name *string `json:"name"`
 	// Tags to associate with the event bus.
+
 	Tags []*Tag `json:"tags,omitempty"`
 }
 
@@ -56,7 +61,7 @@ type EventBusStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource
