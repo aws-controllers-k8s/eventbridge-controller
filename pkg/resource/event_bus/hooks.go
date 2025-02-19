@@ -15,11 +15,8 @@ package event_bus
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
-	"github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/eventbridge"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
@@ -90,11 +87,6 @@ func (rm *resourceManager) customUpdate(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.customUpdate")
 	defer func() { exit(err) }()
-
-	if immutableFieldChanges := rm.getImmutableFieldChanges(delta); len(immutableFieldChanges) > 0 {
-		msg := fmt.Sprintf("Immutable Spec fields have been modified: %s", strings.Join(immutableFieldChanges, ","))
-		return nil, errors.NewTerminalError(fmt.Errorf(msg))
-	}
 
 	if delta.DifferentAt("Spec.Tags") {
 		err = rm.syncTags(ctx, latest, desired)
