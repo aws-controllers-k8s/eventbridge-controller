@@ -63,6 +63,9 @@ spec:
                   The name or ARN of the event bus to associate with this rule. If you omit
                   this, the default event bus is used.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               eventBusRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax
@@ -89,6 +92,9 @@ spec:
               name:
                 description: The name of the rule that you are creating or updating.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               roleARN:
                 description: |-
                   The Amazon Resource Name (ARN) of the IAM role associated with the rule.
@@ -478,7 +484,7 @@ spec:
                 type: object
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource
