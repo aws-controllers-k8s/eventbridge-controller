@@ -66,6 +66,9 @@ spec:
               eventSourceARN:
                 description: The ARN of the event bus that sends events to the archive.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               eventSourceRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax
@@ -86,6 +89,9 @@ spec:
               name:
                 description: The name for the archive to create.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               retentionDays:
                 description: |-
                   The number of days to retain events for. Default value is 0. If set to 0,
@@ -129,7 +135,7 @@ spec:
                 type: object
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource
