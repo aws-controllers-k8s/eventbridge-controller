@@ -16,6 +16,8 @@ package endpoint
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -199,9 +201,13 @@ func customPreCompare(
 }
 
 func equalEventBusConfigs(a, b []*v1alpha1.EndpointEventBus) bool {
-	sortFn := func(a, b *v1alpha1.EndpointEventBus) bool { return *a.EventBusARN < *b.EventBusARN }
-	slices.SortFunc(a, sortFn)
-	slices.SortFunc(b, sortFn)
+
+	sort.Slice(a, func(i, j int) bool {
+		return strings.ToLower(*a[i].EventBusARN) < strings.ToLower(*a[j].EventBusARN)
+	})
+	sort.Slice(b, func(i, j int) bool {
+		return strings.ToLower(*b[i].EventBusARN) < strings.ToLower(*b[j].EventBusARN)
+	})
 
 	equalFn := func(a, b *v1alpha1.EndpointEventBus) bool { return *a.EventBusARN == *b.EventBusARN }
 	return slices.EqualFunc(a, b, equalFn)
