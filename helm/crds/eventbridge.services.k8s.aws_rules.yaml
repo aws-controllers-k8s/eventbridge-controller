@@ -62,6 +62,8 @@ spec:
                 description: |-
                   The name or ARN of the event bus to associate with this rule. If you omit
                   this, the default event bus is used.
+
+                  Regex Pattern: `^(arn:aws[\w-]*:events:[a-z]{2}-[a-z]+-[\w-]+:[0-9]{12}:event-bus\/)?[/\.\-_A-Za-z0-9]+$`
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set
@@ -90,7 +92,10 @@ spec:
                   in the Amazon EventBridge User Guide .
                 type: string
               name:
-                description: The name of the rule that you are creating or updating.
+                description: |-
+                  The name of the rule that you are creating or updating.
+
+                  Regex Pattern: `^[\.\-_A-Za-z0-9]+$`
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set
