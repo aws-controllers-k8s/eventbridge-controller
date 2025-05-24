@@ -33,6 +33,8 @@ type EventBusSpec struct {
 
 	// If you are creating a partner event bus, this specifies the partner event
 	// source that the new event bus will be matched with.
+	//
+	// Regex Pattern: `^aws\.partner(/[\.\-_A-Za-z0-9]+){2,}$`
 	EventSourceName *string `json:"eventSourceName,omitempty"`
 	// The name of the new event bus.
 	//
@@ -43,6 +45,8 @@ type EventBusSpec struct {
 	//
 	// You can't use the name default for a custom event bus, as this name is already
 	// used for your account's default event bus.
+	//
+	// Regex Pattern: `^[/\.\-_A-Za-z0-9]+$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`

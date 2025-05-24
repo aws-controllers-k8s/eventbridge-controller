@@ -57,7 +57,10 @@ spec:
               An Archive object that contains details about an archive.
             properties:
               description:
-                description: A description for the archive.
+                description: |-
+                  A description for the archive.
+
+                  Regex Pattern: `.*`
                 type: string
               eventPattern:
                 description: An event pattern to use to filter events sent to the
@@ -87,7 +90,10 @@ spec:
                     type: object
                 type: object
               name:
-                description: The name for the archive to create.
+                description: |-
+                  The name for the archive to create.
+
+                  Regex Pattern: `^[\.\-_A-Za-z0-9]+$`
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set
@@ -176,7 +182,10 @@ spec:
                 description: The state of the archive that was created.
                 type: string
               stateReason:
-                description: The reason that the archive is in the state.
+                description: |-
+                  The reason that the archive is in the state.
+
+                  Regex Pattern: `.*`
                 type: string
             type: object
         type: object

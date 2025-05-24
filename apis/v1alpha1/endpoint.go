@@ -30,6 +30,8 @@ import (
 type EndpointSpec struct {
 
 	// A description of the global endpoint.
+	//
+	// Regex Pattern: `.*`
 	Description *string `json:"description,omitempty"`
 	// Define the event buses used.
 	//
@@ -37,6 +39,8 @@ type EndpointSpec struct {
 	// +kubebuilder:validation:Required
 	EventBuses []*EndpointEventBus `json:"eventBuses"`
 	// The name of the global endpoint. For example, "Name":"us-east-2-custom_bus_A-endpoint".
+	//
+	// Regex Pattern: `^[\.\-_A-Za-z0-9]+$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
@@ -45,6 +49,8 @@ type EndpointSpec struct {
 	// event replication enabled, set the state to DISABLED.
 	ReplicationConfig *ReplicationConfig `json:"replicationConfig,omitempty"`
 	// The ARN of the role used for replication.
+	//
+	// Regex Pattern: `^arn:aws[a-z-]*:iam::\d{12}:role\/[\w+=,.@/-]+$`
 	RoleARN *string `json:"roleARN,omitempty"`
 	// Configure the routing policy, including the health check and secondary Region..
 	// +kubebuilder:validation:Required
@@ -69,6 +75,8 @@ type EndpointStatus struct {
 	State *string `json:"state,omitempty"`
 	// The reason the endpoint you asked for information about is in its current
 	// state.
+	//
+	// Regex Pattern: `.*`
 	// +kubebuilder:validation:Optional
 	StateReason *string `json:"stateReason,omitempty"`
 }

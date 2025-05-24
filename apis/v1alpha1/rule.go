@@ -29,6 +29,8 @@ type RuleSpec struct {
 	Description *string `json:"description,omitempty"`
 	// The name or ARN of the event bus to associate with this rule. If you omit
 	// this, the default event bus is used.
+	//
+	// Regex Pattern: `^(arn:aws[\w-]*:events:[a-z]{2}-[a-z]+-[\w-]+:[0-9]{12}:event-bus\/)?[/\.\-_A-Za-z0-9]+$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	EventBusName *string                                  `json:"eventBusName,omitempty"`
 	EventBusRef  *ackv1alpha1.AWSResourceReferenceWrapper `json:"eventBusRef,omitempty"`
@@ -37,6 +39,8 @@ type RuleSpec struct {
 	// in the Amazon EventBridge User Guide .
 	EventPattern *string `json:"eventPattern,omitempty"`
 	// The name of the rule that you are creating or updating.
+	//
+	// Regex Pattern: `^[\.\-_A-Za-z0-9]+$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
