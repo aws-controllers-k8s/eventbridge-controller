@@ -26,6 +26,8 @@ import (
 type ArchiveSpec struct {
 
 	// A description for the archive.
+	//
+	// Regex Pattern: `.*`
 	Description *string `json:"description,omitempty"`
 	// An event pattern to use to filter events sent to the archive.
 	EventPattern *string `json:"eventPattern,omitempty"`
@@ -34,6 +36,8 @@ type ArchiveSpec struct {
 	EventSourceARN *string                                  `json:"eventSourceARN,omitempty"`
 	EventSourceRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"eventSourceRef,omitempty"`
 	// The name for the archive to create.
+	//
+	// Regex Pattern: `^[\.\-_A-Za-z0-9]+$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
@@ -62,6 +66,8 @@ type ArchiveStatus struct {
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
 	// The reason that the archive is in the state.
+	//
+	// Regex Pattern: `.*`
 	// +kubebuilder:validation:Optional
 	StateReason *string `json:"stateReason,omitempty"`
 }

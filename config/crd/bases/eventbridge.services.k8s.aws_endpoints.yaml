@@ -61,7 +61,10 @@ spec:
               in the Amazon EventBridge User Guide .
             properties:
               description:
-                description: A description of the global endpoint.
+                description: |-
+                  A description of the global endpoint.
+
+                  Regex Pattern: `.*`
                 type: string
               eventBuses:
                 description: |-
@@ -76,7 +79,10 @@ spec:
                   type: object
                 type: array
               name:
-                description: The name of the global endpoint. For example, "Name":"us-east-2-custom_bus_A-endpoint".
+                description: |-
+                  The name of the global endpoint. For example, "Name":"us-east-2-custom_bus_A-endpoint".
+
+                  Regex Pattern: `^[\.\-_A-Za-z0-9]+$`
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set
@@ -91,7 +97,10 @@ spec:
                     type: string
                 type: object
               roleARN:
-                description: The ARN of the role used for replication.
+                description: |-
+                  The ARN of the role used for replication.
+
+                  Regex Pattern: `^arn:aws[a-z-]*:iam::\d{12}:role\/[\w+=,.@/-]+$`
                 type: string
               routingConfig:
                 description: Configure the routing policy, including the health check
@@ -197,6 +206,8 @@ spec:
                 description: |-
                   The reason the endpoint you asked for information about is in its current
                   state.
+
+                  Regex Pattern: `.*`
                 type: string
             type: object
         type: object

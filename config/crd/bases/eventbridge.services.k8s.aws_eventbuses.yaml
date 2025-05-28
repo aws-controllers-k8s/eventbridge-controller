@@ -66,6 +66,8 @@ spec:
                 description: |-
                   If you are creating a partner event bus, this specifies the partner event
                   source that the new event bus will be matched with.
+
+                  Regex Pattern: `^aws\.partner(/[\.\-_A-Za-z0-9]+){2,}$`
                 type: string
               name:
                 description: |-
@@ -78,6 +80,8 @@ spec:
 
                   You can't use the name default for a custom event bus, as this name is already
                   used for your account's default event bus.
+
+                  Regex Pattern: `^[/\.\-_A-Za-z0-9]+$`
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set
