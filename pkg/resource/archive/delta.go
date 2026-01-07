@@ -17,16 +17,15 @@ package archive
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -64,7 +63,7 @@ func newResourceDelta(
 			delta.Add("Spec.EventSourceARN", a.ko.Spec.EventSourceARN, b.ko.Spec.EventSourceARN)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.EventSourceRef, b.ko.Spec.EventSourceRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.EventSourceRef, b.ko.Spec.EventSourceRef) {
 		delta.Add("Spec.EventSourceRef", a.ko.Spec.EventSourceRef, b.ko.Spec.EventSourceRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
