@@ -138,8 +138,6 @@ resources:
       Name:
         is_immutable: true
         is_required: true
-      EventBusName:
-        is_immutable: true
       Tags:
         compare:
           is_ignored: true
