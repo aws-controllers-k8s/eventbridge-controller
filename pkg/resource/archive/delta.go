@@ -52,7 +52,7 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.EventPattern, b.ko.Spec.EventPattern) {
 		delta.Add("Spec.EventPattern", a.ko.Spec.EventPattern, b.ko.Spec.EventPattern)
 	} else if a.ko.Spec.EventPattern != nil && b.ko.Spec.EventPattern != nil {
-		if *a.ko.Spec.EventPattern != *b.ko.Spec.EventPattern {
+		if equal, err := ackcompare.DocumentEqual(*a.ko.Spec.EventPattern, *b.ko.Spec.EventPattern); err != nil || !equal {
 			delta.Add("Spec.EventPattern", a.ko.Spec.EventPattern, b.ko.Spec.EventPattern)
 		}
 	}

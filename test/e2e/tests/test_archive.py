@@ -131,6 +131,16 @@ class TestArchive:
         archive = eventbridge_validator.get_archive(archive_name)
         assert archive["Description"] == new_description
 
+        # Update eventPattern to verify is_document comparison works
+        updates = {
+            "spec": {
+                "eventPattern": '{"source":["aws.ec2"],"detail-type":["EC2 Instance State-change Notification"]}',
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted

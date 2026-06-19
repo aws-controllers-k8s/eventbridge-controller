@@ -5,3 +5,5 @@ metadata:
 spec:
   name: $ARCHIVE_NAME
   eventSourceARN: $EVENT_SOURCE_ARN
+  eventPattern: |
+    {"source":["aws.ec2"]}

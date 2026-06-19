@@ -23,6 +23,8 @@ operations:
 resources:
   Archive:
     fields:
+      EventPattern:
+        is_document: true
       Name:
         is_immutable: true
         is_required: true
@@ -168,6 +170,8 @@ resources:
       # making this terminal would leak bus resources in AWS and K8s control planes
   Rule:
     fields:
+      EventPattern:
+        is_document: true
       EventBusName:
         is_immutable: true # seems to not affect EventBusRef
         references:
