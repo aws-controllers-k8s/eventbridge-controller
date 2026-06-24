@@ -50,7 +50,8 @@ type RuleSpec struct {
 	// account granted permission to your account through an organization instead
 	// of directly by the account ID, you must specify a RoleArn with proper permissions
 	// in the Target structure, instead of here in this parameter.
-	RoleARN *string `json:"roleARN,omitempty"`
+	RoleARN *string                                  `json:"roleARN,omitempty"`
+	RoleRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"roleRef,omitempty"`
 	// The scheduling expression. For example, "cron(0 20 * * ? *)" or "rate(5 minutes)".
 	ScheduleExpression *string `json:"scheduleExpression,omitempty"`
 	// The state of the rule.

@@ -87,6 +87,10 @@ resources:
       RoleARN:
         compare:
           is_ignored: true
+        references:
+          service_name: iam
+          resource: Role
+          path: Status.ACKResourceMetadata.ARN
       EventBuses:
         compare:
           is_ignored: true
@@ -172,6 +176,11 @@ resources:
     fields:
       EventPattern:
         is_document: true
+      RoleARN:
+        references:
+          service_name: iam
+          resource: Role
+          path: Status.ACKResourceMetadata.ARN
       EventBusName:
         is_immutable: true # seems to not affect EventBusRef
         references:

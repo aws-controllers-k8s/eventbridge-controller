@@ -761,6 +761,11 @@ func (in *EndpointSpec) DeepCopyInto(out *EndpointSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.RoleRef != nil {
+		in, out := &in.RoleRef, &out.RoleRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.RoutingConfig != nil {
 		in, out := &in.RoutingConfig, &out.RoutingConfig
 		*out = new(RoutingConfig)
@@ -1759,6 +1764,11 @@ func (in *RuleSpec) DeepCopyInto(out *RuleSpec) {
 		in, out := &in.RoleARN, &out.RoleARN
 		*out = new(string)
 		**out = **in
+	}
+	if in.RoleRef != nil {
+		in, out := &in.RoleRef, &out.RoleRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ScheduleExpression != nil {
 		in, out := &in.ScheduleExpression, &out.ScheduleExpression

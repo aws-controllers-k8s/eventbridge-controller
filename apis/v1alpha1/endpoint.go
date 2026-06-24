@@ -51,7 +51,8 @@ type EndpointSpec struct {
 	// The ARN of the role used for replication.
 	//
 	// Regex Pattern: `^arn:aws[a-z-]*:iam::\d{12}:role\/[\w+=,.@/-]+$`
-	RoleARN *string `json:"roleARN,omitempty"`
+	RoleARN *string                                  `json:"roleARN,omitempty"`
+	RoleRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"roleRef,omitempty"`
 	// Configure the routing policy, including the health check and secondary Region..
 	// +kubebuilder:validation:Required
 	RoutingConfig *RoutingConfig `json:"routingConfig"`
