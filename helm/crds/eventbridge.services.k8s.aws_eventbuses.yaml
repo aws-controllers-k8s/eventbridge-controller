@@ -86,6 +86,11 @@ spec:
                 x-kubernetes-validations:
                 - message: Value is immutable once set
                   rule: self == oldSelf
+              policy:
+                description: |-
+                  Policy is the resource-based policy for this event bus, enabling
+                  cross-account access. Uses PutPermission/RemovePermission APIs.
+                type: string
               tags:
                 description: Tags to associate with the event bus.
                 items:

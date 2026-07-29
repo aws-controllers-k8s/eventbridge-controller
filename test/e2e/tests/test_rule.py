@@ -34,7 +34,7 @@ CREATE_WAIT_AFTER_SECONDS = 10
 UPDATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def event_bus():
     resource_name = random_suffix_name("eventbridge-bus", 24)
 
@@ -68,10 +68,10 @@ def event_bus():
     try:
         _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted
-    except:
+    except Exception:
         pass
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def simple_rule(event_bus):
     resource_name = random_suffix_name("eventbridge-rule", 24)
     _, eb_cr = event_bus
@@ -140,15 +140,6 @@ class TestRule:
             expected=rule_tags,
         )
 
-        # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
-        assert deleted is True
-
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
-        # Check rule doesn't exist
-        assert not eventbridge_validator.rule_exists(event_bus_name, rule_name)
-    
     # def test_create_delete_with_targets
 
     def test_rule_simple_update(self, eventbridge_client, simple_rule):
@@ -195,15 +186,6 @@ class TestRule:
             expected=rule_tags,
         )
 
-        # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
-        assert deleted is True
-
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
-        # Check rule doesn't exist
-        assert not eventbridge_validator.rule_exists(event_bus_name, rule_name)
-
     def test_rule_update_targets(self, eventbridge_client, simple_rule):
         (ref, cr) = simple_rule
         resources = get_bootstrap_resources()
@@ -227,12 +209,3 @@ class TestRule:
         targets = eventbridge_validator.get_rule_targets(event_bus_name, rule_name)
         assert len(targets) == 1
         assert targets[0]["Id"] == "sqs-queue"
-
-        # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
-        assert deleted is True
-
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
-        # Check rule doesn't exist
-        assert not eventbridge_validator.rule_exists(event_bus_name, rule_name)

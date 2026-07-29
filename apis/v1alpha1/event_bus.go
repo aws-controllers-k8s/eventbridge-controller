@@ -50,6 +50,8 @@ type EventBusSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
+	// The policy that enables the external account to send events to your account.
+	Policy *string `json:"policy,omitempty"`
 	// Tags to associate with the event bus.
 	Tags []*Tag `json:"tags,omitempty"`
 }
