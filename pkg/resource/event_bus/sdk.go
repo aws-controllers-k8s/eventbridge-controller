@@ -102,10 +102,20 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.Name = nil
 	}
+	if resp.Policy != nil {
+		ko.Spec.Policy = resp.Policy
+	} else {
+		ko.Spec.Policy = nil
+	}
 
 	rm.setStatusDefaults(ko)
 	if err := rm.setResourceAdditionalFields(ctx, ko); err != nil {
 		return nil, err
+	}
+	if resp.Policy != nil {
+		ko.Spec.Policy = resp.Policy
+	} else {
+		ko.Spec.Policy = nil
 	}
 
 	return &resource{ko}, nil
@@ -171,6 +181,12 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	if ko.Spec.Policy != nil && *ko.Spec.Policy != "" {
+		if err := rm.putPolicy(ctx, ko); err != nil {
+			return nil, err
+		}
+	}
+
 	return &resource{ko}, nil
 }
 

@@ -94,7 +94,69 @@ func (rm *resourceManager) customUpdate(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.Policy") {
+		err = rm.syncPolicy(ctx, latest, desired)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return desired, nil
+}
+
+// syncPolicy updates the EventBus resource-based policy.
+func (rm *resourceManager) syncPolicy(
+	ctx context.Context,
+	latest *resource,
+	desired *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncPolicy")
+	defer func() { exit(err) }()
+
+	if desired.ko.Spec.Policy != nil && *desired.ko.Spec.Policy != "" {
+		return rm.putPolicy(ctx, desired.ko)
+	}
+	return rm.removePolicy(ctx, latest.ko)
+}
+
+// putPolicy calls PutPermission with the full policy document.
+func (rm *resourceManager) putPolicy(
+	ctx context.Context,
+	ko *svcapitypes.EventBus,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.putPolicy")
+	defer func() { exit(err) }()
+
+	_, err = rm.sdkapi.PutPermission(
+		ctx,
+		&svcsdk.PutPermissionInput{
+			EventBusName: ko.Spec.Name,
+			Policy:       ko.Spec.Policy,
+		},
+	)
+	rm.metrics.RecordAPICall("UPDATE", "PutPermission", err)
+	return err
+}
+
+// removePolicy calls RemovePermission to delete the full resource policy.
+func (rm *resourceManager) removePolicy(
+	ctx context.Context,
+	ko *svcapitypes.EventBus,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.removePolicy")
+	defer func() { exit(err) }()
+
+	_, err = rm.sdkapi.RemovePermission(
+		ctx,
+		&svcsdk.RemovePermissionInput{
+			EventBusName:         ko.Spec.Name,
+			RemoveAllPermissions: true,
+		},
+	)
+	rm.metrics.RecordAPICall("UPDATE", "RemovePermission", err)
+	return err
 }
 
 // syncTags updates event bus tags
