@@ -236,19 +236,6 @@ func (rm *resourceManager) sdkCreate(
 		arn := ackv1alpha1.AWSResourceName(*resp.Arn)
 		ko.Status.ACKResourceMetadata.ARN = &arn
 	}
-	if resp.EventBuses != nil {
-		f1 := []*svcapitypes.EndpointEventBus{}
-		for _, f1iter := range resp.EventBuses {
-			f1elem := &svcapitypes.EndpointEventBus{}
-			if f1iter.EventBusArn != nil {
-				f1elem.EventBusARN = f1iter.EventBusArn
-			}
-			f1 = append(f1, f1elem)
-		}
-		ko.Spec.EventBuses = f1
-	} else {
-		ko.Spec.EventBuses = nil
-	}
 	if resp.Name != nil {
 		ko.Spec.Name = resp.Name
 	} else {
@@ -418,19 +405,6 @@ func (rm *resourceManager) sdkUpdate(
 	if resp.Arn != nil {
 		arn := ackv1alpha1.AWSResourceName(*resp.Arn)
 		ko.Status.ACKResourceMetadata.ARN = &arn
-	}
-	if resp.EventBuses != nil {
-		f3 := []*svcapitypes.EndpointEventBus{}
-		for _, f3iter := range resp.EventBuses {
-			f3elem := &svcapitypes.EndpointEventBus{}
-			if f3iter.EventBusArn != nil {
-				f3elem.EventBusARN = f3iter.EventBusArn
-			}
-			f3 = append(f3, f3elem)
-		}
-		ko.Spec.EventBuses = f3
-	} else {
-		ko.Spec.EventBuses = nil
 	}
 	if resp.Name != nil {
 		ko.Spec.Name = resp.Name

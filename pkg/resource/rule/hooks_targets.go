@@ -18,6 +18,7 @@ import (
 	"errors"
 	"reflect"
 
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	"github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
@@ -150,7 +151,7 @@ mainLoop:
 		visitedIndexes = append(visitedIndexes, *aElement.ID)
 		for _, bElement := range b {
 			if pkgtags.EqualStrings(aElement.ID, bElement.ID) {
-				if !reflect.DeepEqual(aElement, bElement) {
+				if !equalTarget(aElement, bElement) {
 					added = append(added, bElement)
 				}
 				continue mainLoop
@@ -174,4 +175,85 @@ func equalTargets(
 ) bool {
 	added, removed := computeTargetsDelta(a, b)
 	return len(added) == 0 && len(removed) == 0
+}
+
+// referenceWrapperType is the type the code-generator uses for the companion
+// field it adds for every configured `references` block.
+var referenceWrapperType = reflect.TypeOf(ackv1alpha1.AWSResourceReferenceWrapper{})
+
+// equalTarget compares two targets while ignoring any cross-resource reference
+// companion fields (`roleRef` and friends) they carry.
+//
+// Ignoring them is required for correctness, not a convenience. A target read
+// back from EventBridge can never carry a companion: latest is rebuilt from the
+// API response by resourceTargetsFromSDKTargets, which only ever observes
+// concrete values. A desired target carries whichever companions the user set.
+// Comparing the structs whole would therefore always report a difference once
+// any Targets.* field has a `references` block, so customPreCompare would add
+// Spec.Targets to the delta on every reconcile and syncTargets would re-issue
+// PutTargets forever, leaving the rule permanently out of sync.
+//
+// Dropping the companions loses no signal, because the runtime resolves
+// references into their concrete fields before the delta is computed. By the
+// time this runs, a resolved reference is already present on the concrete field
+// it feeds, and that field is compared as normal.
+func equalTarget(a, b *svcapitypes.Target) bool {
+	return reflect.DeepEqual(
+		targetWithoutReferences(a),
+		targetWithoutReferences(b),
+	)
+}
+
+// targetWithoutReferences returns a deep copy of t with every cross-resource
+// reference companion field cleared, at any nesting depth. The input is left
+// untouched.
+func targetWithoutReferences(t *svcapitypes.Target) *svcapitypes.Target {
+	if t == nil {
+		return nil
+	}
+	out := t.DeepCopy()
+	clearReferenceWrappers(reflect.ValueOf(out))
+	return out
+}
+
+// clearReferenceWrappers walks v and zeroes every cross-resource reference
+// companion field it finds. It recurses through pointers, slices, and nested
+// structs so that companions on deeply nested members are cleared too -- the
+// remaining Targets.* references identified by the reference audit sit several
+// levels down (for example Targets.EcsParameters.TaskDefinitionArn), and this
+// needs no amendment to cover them.
+func clearReferenceWrappers(v reflect.Value) {
+	switch v.Kind() {
+	case reflect.Pointer, reflect.Interface:
+		if !v.IsNil() {
+			clearReferenceWrappers(v.Elem())
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < v.Len(); i++ {
+			clearReferenceWrappers(v.Index(i))
+		}
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			f := v.Field(i)
+			if !f.CanSet() {
+				continue
+			}
+			if holdsReferenceWrapper(f.Type()) {
+				f.Set(reflect.Zero(f.Type()))
+				continue
+			}
+			clearReferenceWrappers(f)
+		}
+	}
+}
+
+// holdsReferenceWrapper reports whether t is an AWSResourceReferenceWrapper or
+// a pointer to, or slice of, one. Both cardinalities occur: a reference on a
+// scalar field generates a single wrapper, one on a list field generates a
+// slice of them.
+func holdsReferenceWrapper(t reflect.Type) bool {
+	for t.Kind() == reflect.Pointer || t.Kind() == reflect.Slice || t.Kind() == reflect.Array {
+		t = t.Elem()
+	}
+	return t == referenceWrapperType
 }

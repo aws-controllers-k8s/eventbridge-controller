@@ -94,6 +94,18 @@ resources:
       EventBuses:
         compare:
           is_ignored: true
+        # The Create/Update response carries the resolved event bus ARN but not
+        # the generated eventBusRef companion, so writing it back over the spec
+        # would drop the reference after the first reconcile.
+        set:
+          - method: Create
+            ignore: true
+          - method: Update
+            ignore: true
+      EventBuses.EventBusARN:
+        references:
+          resource: EventBus
+          path: Status.ACKResourceMetadata.ARN
       ReplicationConfig:
         compare:
           is_ignored: true
@@ -201,6 +213,11 @@ resources:
           list_of: Target # note: does not add comment nor kube-markers to generated code
         compare:
           is_ignored: true
+      Targets.RoleARN:
+        references:
+          service_name: iam
+          resource: Role
+          path: Status.ACKResourceMetadata.ARN
     hooks:
       sdk_read_one_post_set_output:
         template_path: hooks/rule/sdk_read_one_post_set_output.go.tpl

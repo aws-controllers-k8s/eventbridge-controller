@@ -196,20 +196,32 @@ func customPreCompare(
 	bBusCfg := b.ko.Spec.EventBuses
 
 	if !equalEventBusConfigs(aBusCfg, bBusCfg) {
-		delta.Add("Spec.EventBuses", aReplCfg, bReplCfg)
+		delta.Add("Spec.EventBuses", aBusCfg, bBusCfg)
 	}
 }
 
 func equalEventBusConfigs(a, b []*v1alpha1.EndpointEventBus) bool {
+	// An entry's ARN can legitimately be nil here. eventBusARN is optional in
+	// the CRD, and a user who supplies only the eventBusRef companion leaves it
+	// unset until the reference resolves. Read it defensively rather than
+	// dereferencing: delta computation runs before the spec validation in
+	// sdk_update_pre_build_request, so a nil here would panic the controller
+	// before the validation that rejects it could run.
+	arnOf := func(e *v1alpha1.EndpointEventBus) string {
+		if e == nil || e.EventBusARN == nil {
+			return ""
+		}
+		return *e.EventBusARN
+	}
 
 	sort.Slice(a, func(i, j int) bool {
-		return strings.ToLower(*a[i].EventBusARN) < strings.ToLower(*a[j].EventBusARN)
+		return strings.ToLower(arnOf(a[i])) < strings.ToLower(arnOf(a[j]))
 	})
 	sort.Slice(b, func(i, j int) bool {
-		return strings.ToLower(*b[i].EventBusARN) < strings.ToLower(*b[j].EventBusARN)
+		return strings.ToLower(arnOf(b[i])) < strings.ToLower(arnOf(b[j]))
 	})
 
-	equalFn := func(a, b *v1alpha1.EndpointEventBus) bool { return *a.EventBusARN == *b.EventBusARN }
+	equalFn := func(x, y *v1alpha1.EndpointEventBus) bool { return arnOf(x) == arnOf(y) }
 	return slices.EqualFunc(a, b, equalFn)
 }
 

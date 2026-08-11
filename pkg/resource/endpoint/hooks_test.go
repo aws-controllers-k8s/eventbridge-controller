@@ -24,6 +24,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
 
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 )
 
@@ -575,4 +577,120 @@ func normalizeNilStrings(input *eventbridge.UpdateEndpointInput) *eventbridge.Up
 		input.Description = &emptyStr
 	}
 	return input
+}
+
+// Test_customPreCompare_eventBusesDeltaPayload asserts the Spec.EventBuses
+// delta records the event bus values rather than some other field's.
+//
+// Test_customPreCompare above only asserts the delta *path*, which is why this
+// went unnoticed: the entry was raised on the right condition but carried the
+// ReplicationConfig values. The delta log is the evidence used to diagnose a
+// reference-form mismatch on eventBusARN, so a wrong payload there sends a
+// reader chasing the wrong field.
+func Test_customPreCompare_eventBusesDeltaPayload(t *testing.T) {
+	desired := &resource{
+		ko: &v1alpha1.Endpoint{
+			Spec: v1alpha1.EndpointSpec{
+				EventBuses: []*v1alpha1.EndpointEventBus{
+					{EventBusARN: aws.String("arn:bus:1")},
+					{EventBusARN: aws.String("arn:bus:2")},
+				},
+				Name:              aws.String("bus"),
+				ReplicationConfig: &v1alpha1.ReplicationConfig{State: aws.String("ENABLED")},
+			},
+		},
+	}
+	latest := &resource{
+		ko: &v1alpha1.Endpoint{
+			Spec: v1alpha1.EndpointSpec{
+				EventBuses: []*v1alpha1.EndpointEventBus{
+					{EventBusARN: aws.String("arn:bus:3")},
+					{EventBusARN: aws.String("arn:bus:4")},
+				},
+				Name:              aws.String("bus"),
+				ReplicationConfig: &v1alpha1.ReplicationConfig{State: aws.String("ENABLED")},
+			},
+		},
+	}
+
+	d := ackcompare.NewDelta()
+	customPreCompare(d, desired, latest)
+
+	assert.Assert(t, d.DifferentAt("Spec.EventBuses"))
+
+	var found *ackcompare.Difference
+	for _, diff := range d.Differences {
+		if diff.Path.Contains("Spec.EventBuses") {
+			found = diff
+			break
+		}
+	}
+	assert.Assert(t, found != nil, "expected a Spec.EventBuses difference")
+
+	a, ok := found.A.([]*v1alpha1.EndpointEventBus)
+	assert.Assert(t, ok, "Spec.EventBuses delta A must carry the event buses, got %T", found.A)
+	b, ok := found.B.([]*v1alpha1.EndpointEventBus)
+	assert.Assert(t, ok, "Spec.EventBuses delta B must carry the event buses, got %T", found.B)
+
+	assert.Equal(t, len(a), 2)
+	assert.Equal(t, len(b), 2)
+	assert.Equal(t, *a[0].EventBusARN, "arn:bus:1")
+	assert.Equal(t, *b[0].EventBusARN, "arn:bus:3")
+}
+
+// Test_equalEventBusConfigs_nilSafe covers an entry whose ARN is unset. That is
+// reachable now that eventBusARN can be supplied as an eventBusRef companion
+// instead: the concrete field stays nil until the reference resolves, and delta
+// computation runs before the spec validation that rejects a missing ARN. An
+// unguarded dereference here would panic the controller.
+func Test_equalEventBusConfigs_nilSafe(t *testing.T) {
+	withARN := func(s string) *v1alpha1.EndpointEventBus {
+		return &v1alpha1.EndpointEventBus{EventBusARN: aws.String(s)}
+	}
+
+	tests := []struct {
+		name  string
+		a     []*v1alpha1.EndpointEventBus
+		b     []*v1alpha1.EndpointEventBus
+		equal bool
+	}{
+		{
+			name:  "both entries unresolved",
+			a:     []*v1alpha1.EndpointEventBus{{}, {}},
+			b:     []*v1alpha1.EndpointEventBus{{}, {}},
+			equal: true,
+		}, {
+			name:  "one side unresolved",
+			a:     []*v1alpha1.EndpointEventBus{{}, {}},
+			b:     []*v1alpha1.EndpointEventBus{withARN("arn:bus:1"), withARN("arn:bus:2")},
+			equal: false,
+		}, {
+			name:  "nil entry in the slice",
+			a:     []*v1alpha1.EndpointEventBus{nil, withARN("arn:bus:1")},
+			b:     []*v1alpha1.EndpointEventBus{nil, withARN("arn:bus:1")},
+			equal: true,
+		}, {
+			name: "ref-only entry compares equal to the same ref-only entry",
+			a: []*v1alpha1.EndpointEventBus{
+				{EventBusRef: &ackv1alpha1.AWSResourceReferenceWrapper{
+					From: &ackv1alpha1.AWSResourceReference{Name: aws.String("my-bus")},
+				}},
+				withARN("arn:bus:1"),
+			},
+			b: []*v1alpha1.EndpointEventBus{
+				{EventBusRef: &ackv1alpha1.AWSResourceReferenceWrapper{
+					From: &ackv1alpha1.AWSResourceReference{Name: aws.String("my-bus")},
+				}},
+				withARN("arn:bus:1"),
+			},
+			equal: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Must not panic.
+			assert.Equal(t, equalEventBusConfigs(tt.a, tt.b), tt.equal)
+		})
+	}
 }

@@ -167,6 +167,8 @@ type ECSParameters struct {
 // The event buses the endpoint is associated with.
 type EndpointEventBus struct {
 	EventBusARN *string `json:"eventBusARN,omitempty"`
+	// Reference field for EventBusARN
+	EventBusRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"eventBusRef,omitempty"`
 }
 
 // A global endpoint used to improve your application's availability by making
@@ -479,6 +481,8 @@ type Target struct {
 	// A RetryPolicy object that includes information about the retry policy settings.
 	RetryPolicy *RetryPolicy `json:"retryPolicy,omitempty"`
 	RoleARN     *string      `json:"roleARN,omitempty"`
+	// Reference field for RoleARN
+	RoleRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"roleRef,omitempty"`
 	// This parameter contains the criteria (either InstanceIds or a tag) used to
 	// specify which EC2 instances are to be sent the command.
 	RunCommandParameters *RunCommandParameters `json:"runCommandParameters,omitempty"`

@@ -42,6 +42,12 @@ import (
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
+	for f0idx, f0iter := range ko.Spec.EventBuses {
+		if f0iter.EventBusRef != nil {
+			ko.Spec.EventBuses[f0idx].EventBusARN = nil
+		}
+	}
+
 	if ko.Spec.RoleRef != nil {
 		ko.Spec.RoleARN = nil
 	}
@@ -65,6 +71,12 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForEventBuses_EventBusARN(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForRoleARN(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -78,8 +90,107 @@ func (rm *resourceManager) ResolveReferences(
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.Endpoint) error {
 
+	for _, f0iter := range ko.Spec.EventBuses {
+		if f0iter.EventBusRef != nil && f0iter.EventBusARN != nil {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("EventBuses.EventBusARN", "EventBuses.EventBusRef")
+		}
+	}
+
 	if ko.Spec.RoleRef != nil && ko.Spec.RoleARN != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("RoleARN", "RoleRef")
+	}
+	return nil
+}
+
+// resolveReferenceForEventBuses_EventBusARN reads the resource referenced
+// from EventBuses.EventBusRef field and sets the EventBuses.EventBusARN
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForEventBuses_EventBusARN(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Endpoint,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.EventBuses {
+		if f0iter.EventBusRef != nil && f0iter.EventBusRef.From != nil {
+			hasReferences = true
+			arr := f0iter.EventBusRef.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: EventBuses.EventBusRef")
+			}
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
+				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
+				ko.ObjectMeta.GetNamespace(),
+				arr.Namespace,
+				*arr.Name,
+			)
+			if err != nil {
+				return hasReferences, err
+			}
+			obj := &svcapitypes.EventBus{}
+			if err := getReferencedResourceState_EventBus(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			ko.Spec.EventBuses[f0idx].EventBusARN = (*string)(obj.Status.ACKResourceMetadata.ARN)
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_EventBus looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_EventBus(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.EventBus,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"EventBus",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"EventBus",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"EventBus",
+			namespace, name)
+	}
+	if obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"EventBus",
+			namespace, name,
+			"Status.ACKResourceMetadata.ARN")
 	}
 	return nil
 }
