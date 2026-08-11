@@ -23,17 +23,28 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	ecsapitypes "github.com/aws-controllers-k8s/ecs-controller/apis/v1alpha1"
 	iamapitypes "github.com/aws-controllers-k8s/iam-controller/apis/v1alpha1"
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
+	secretsmanagerapitypes "github.com/aws-controllers-k8s/secretsmanager-controller/apis/v1alpha1"
 
 	svcapitypes "github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
 )
 
 // +kubebuilder:rbac:groups=iam.services.k8s.aws,resources=roles,verbs=get;list
 // +kubebuilder:rbac:groups=iam.services.k8s.aws,resources=roles/status,verbs=get;list
+
+// +kubebuilder:rbac:groups=ecs.services.k8s.aws,resources=capacityproviders,verbs=get;list
+// +kubebuilder:rbac:groups=ecs.services.k8s.aws,resources=capacityproviders/status,verbs=get;list
+
+// +kubebuilder:rbac:groups=ecs.services.k8s.aws,resources=taskdefinitions,verbs=get;list
+// +kubebuilder:rbac:groups=ecs.services.k8s.aws,resources=taskdefinitions/status,verbs=get;list
+
+// +kubebuilder:rbac:groups=secretsmanager.services.k8s.aws,resources=secrets,verbs=get;list
+// +kubebuilder:rbac:groups=secretsmanager.services.k8s.aws,resources=secrets/status,verbs=get;list
 
 // +kubebuilder:rbac:groups=iam.services.k8s.aws,resources=roles,verbs=get;list
 // +kubebuilder:rbac:groups=iam.services.k8s.aws,resources=roles/status,verbs=get;list
@@ -51,6 +62,32 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 
 	if ko.Spec.RoleRef != nil {
 		ko.Spec.RoleARN = nil
+	}
+
+	for f0idx, f0iter := range ko.Spec.Targets {
+		if f0iter.ECSParameters != nil {
+			for f1idx, f1iter := range f0iter.ECSParameters.CapacityProviderStrategy {
+				if f1iter.CapacityProviderRef != nil {
+					ko.Spec.Targets[f0idx].ECSParameters.CapacityProviderStrategy[f1idx].CapacityProvider = nil
+				}
+			}
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.Targets {
+		if f0iter.ECSParameters != nil {
+			if f0iter.ECSParameters.TaskDefinitionRef != nil {
+				ko.Spec.Targets[f0idx].ECSParameters.TaskDefinitionARN = nil
+			}
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.Targets {
+		if f0iter.RedshiftDataParameters != nil {
+			if f0iter.RedshiftDataParameters.SecretManagerRef != nil {
+				ko.Spec.Targets[f0idx].RedshiftDataParameters.SecretManagerARN = nil
+			}
+		}
 	}
 
 	for f0idx, f0iter := range ko.Spec.Targets {
@@ -90,6 +127,24 @@ func (rm *resourceManager) ResolveReferences(
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
+	if fieldHasReferences, err := rm.resolveReferenceForTargets_ECSParameters_CapacityProviderStrategy_CapacityProvider(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForTargets_ECSParameters_TaskDefinitionARN(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForTargets_RedshiftDataParameters_SecretManagerARN(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForTargets_RoleARN(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -109,6 +164,32 @@ func validateReferenceFields(ko *svcapitypes.Rule) error {
 
 	if ko.Spec.RoleRef != nil && ko.Spec.RoleARN != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("RoleARN", "RoleRef")
+	}
+
+	for _, f0iter := range ko.Spec.Targets {
+		if f0iter.ECSParameters != nil {
+			for _, f1iter := range f0iter.ECSParameters.CapacityProviderStrategy {
+				if f1iter.CapacityProviderRef != nil && f1iter.CapacityProvider != nil {
+					return ackerr.ResourceReferenceAndIDNotSupportedFor("Targets.ECSParameters.CapacityProviderStrategy.CapacityProvider", "Targets.ECSParameters.CapacityProviderStrategy.CapacityProviderRef")
+				}
+			}
+		}
+	}
+
+	for _, f0iter := range ko.Spec.Targets {
+		if f0iter.ECSParameters != nil {
+			if f0iter.ECSParameters.TaskDefinitionRef != nil && f0iter.ECSParameters.TaskDefinitionARN != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("Targets.ECSParameters.TaskDefinitionARN", "Targets.ECSParameters.TaskDefinitionRef")
+			}
+		}
+	}
+
+	for _, f0iter := range ko.Spec.Targets {
+		if f0iter.RedshiftDataParameters != nil {
+			if f0iter.RedshiftDataParameters.SecretManagerRef != nil && f0iter.RedshiftDataParameters.SecretManagerARN != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("Targets.RedshiftDataParameters.SecretManagerARN", "Targets.RedshiftDataParameters.SecretManagerRef")
+			}
+		}
 	}
 
 	for _, f0iter := range ko.Spec.Targets {
@@ -295,6 +376,293 @@ func getReferencedResourceState_Role(
 	if obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil {
 		return ackerr.ResourceReferenceMissingTargetFieldFor(
 			"Role",
+			namespace, name,
+			"Status.ACKResourceMetadata.ARN")
+	}
+	return nil
+}
+
+// resolveReferenceForTargets_ECSParameters_CapacityProviderStrategy_CapacityProvider reads the resource referenced
+// from Targets.ECSParameters.CapacityProviderStrategy.CapacityProviderRef field and sets the Targets.ECSParameters.CapacityProviderStrategy.CapacityProvider
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForTargets_ECSParameters_CapacityProviderStrategy_CapacityProvider(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Rule,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.Targets {
+		if f0iter.ECSParameters != nil {
+			for f1idx, f1iter := range f0iter.ECSParameters.CapacityProviderStrategy {
+				if f1iter.CapacityProviderRef != nil && f1iter.CapacityProviderRef.From != nil {
+					hasReferences = true
+					arr := f1iter.CapacityProviderRef.From
+					if arr.Name == nil || *arr.Name == "" {
+						return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Targets.ECSParameters.CapacityProviderStrategy.CapacityProviderRef")
+					}
+					namespace, err := ackrt.ResolveCrossNamespaceReference(
+						ctx,
+						rm.cfg.EnableCrossNamespace,
+						&ko.Status.Conditions,
+						ackrt.CrossNamespaceRefKindResource,
+						ko.ObjectMeta.GetNamespace(),
+						arr.Namespace,
+						*arr.Name,
+					)
+					if err != nil {
+						return hasReferences, err
+					}
+					obj := &ecsapitypes.CapacityProvider{}
+					if err := getReferencedResourceState_CapacityProvider(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+						return hasReferences, err
+					}
+					ko.Spec.Targets[f0idx].ECSParameters.CapacityProviderStrategy[f1idx].CapacityProvider = (*string)(obj.Spec.Name)
+				}
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_CapacityProvider looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_CapacityProvider(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *ecsapitypes.CapacityProvider,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"CapacityProvider",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"CapacityProvider",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"CapacityProvider",
+			namespace, name)
+	}
+	if obj.Spec.Name == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"CapacityProvider",
+			namespace, name,
+			"Spec.Name")
+	}
+	return nil
+}
+
+// resolveReferenceForTargets_ECSParameters_TaskDefinitionARN reads the resource referenced
+// from Targets.ECSParameters.TaskDefinitionRef field and sets the Targets.ECSParameters.TaskDefinitionARN
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForTargets_ECSParameters_TaskDefinitionARN(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Rule,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.Targets {
+		if f0iter.ECSParameters != nil {
+			if f0iter.ECSParameters.TaskDefinitionRef != nil && f0iter.ECSParameters.TaskDefinitionRef.From != nil {
+				hasReferences = true
+				arr := f0iter.ECSParameters.TaskDefinitionRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Targets.ECSParameters.TaskDefinitionRef")
+				}
+				namespace, err := ackrt.ResolveCrossNamespaceReference(
+					ctx,
+					rm.cfg.EnableCrossNamespace,
+					&ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(),
+					arr.Namespace,
+					*arr.Name,
+				)
+				if err != nil {
+					return hasReferences, err
+				}
+				obj := &ecsapitypes.TaskDefinition{}
+				if err := getReferencedResourceState_TaskDefinition(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.Targets[f0idx].ECSParameters.TaskDefinitionARN = (*string)(obj.Status.ACKResourceMetadata.ARN)
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_TaskDefinition looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_TaskDefinition(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *ecsapitypes.TaskDefinition,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"TaskDefinition",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"TaskDefinition",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"TaskDefinition",
+			namespace, name)
+	}
+	if obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"TaskDefinition",
+			namespace, name,
+			"Status.ACKResourceMetadata.ARN")
+	}
+	return nil
+}
+
+// resolveReferenceForTargets_RedshiftDataParameters_SecretManagerARN reads the resource referenced
+// from Targets.RedshiftDataParameters.SecretManagerRef field and sets the Targets.RedshiftDataParameters.SecretManagerARN
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForTargets_RedshiftDataParameters_SecretManagerARN(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Rule,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.Targets {
+		if f0iter.RedshiftDataParameters != nil {
+			if f0iter.RedshiftDataParameters.SecretManagerRef != nil && f0iter.RedshiftDataParameters.SecretManagerRef.From != nil {
+				hasReferences = true
+				arr := f0iter.RedshiftDataParameters.SecretManagerRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Targets.RedshiftDataParameters.SecretManagerRef")
+				}
+				namespace, err := ackrt.ResolveCrossNamespaceReference(
+					ctx,
+					rm.cfg.EnableCrossNamespace,
+					&ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(),
+					arr.Namespace,
+					*arr.Name,
+				)
+				if err != nil {
+					return hasReferences, err
+				}
+				obj := &secretsmanagerapitypes.Secret{}
+				if err := getReferencedResourceState_Secret(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.Targets[f0idx].RedshiftDataParameters.SecretManagerARN = (*string)(obj.Status.ACKResourceMetadata.ARN)
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_Secret looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_Secret(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *secretsmanagerapitypes.Secret,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Secret",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"Secret",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"Secret",
+			namespace, name)
+	}
+	if obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"Secret",
 			namespace, name,
 			"Status.ACKResourceMetadata.ARN")
 	}

@@ -380,6 +380,11 @@ func (in *CapacityProviderStrategyItem) DeepCopyInto(out *CapacityProviderStrate
 		*out = new(string)
 		**out = **in
 	}
+	if in.CapacityProviderRef != nil {
+		in, out := &in.CapacityProviderRef, &out.CapacityProviderRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Weight != nil {
 		in, out := &in.Weight, &out.Weight
 		*out = new(int64)
@@ -635,6 +640,11 @@ func (in *ECSParameters) DeepCopyInto(out *ECSParameters) {
 		in, out := &in.TaskDefinitionARN, &out.TaskDefinitionARN
 		*out = new(string)
 		**out = **in
+	}
+	if in.TaskDefinitionRef != nil {
+		in, out := &in.TaskDefinitionRef, &out.TaskDefinitionRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
@@ -1494,6 +1504,11 @@ func (in *RedshiftDataParameters) DeepCopyInto(out *RedshiftDataParameters) {
 		in, out := &in.SecretManagerARN, &out.SecretManagerARN
 		*out = new(string)
 		**out = **in
+	}
+	if in.SecretManagerRef != nil {
+		in, out := &in.SecretManagerRef, &out.SecretManagerRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.SQL != nil {
 		in, out := &in.SQL, &out.SQL

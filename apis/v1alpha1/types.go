@@ -91,7 +91,9 @@ type BatchRetryStrategy struct {
 type CapacityProviderStrategyItem struct {
 	Base             *int64  `json:"base,omitempty"`
 	CapacityProvider *string `json:"capacityProvider,omitempty"`
-	Weight           *int64  `json:"weight,omitempty"`
+	// Reference field for CapacityProvider
+	CapacityProviderRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"capacityProviderRef,omitempty"`
+	Weight              *int64                                   `json:"weight,omitempty"`
 }
 
 // A JSON string which you can use to limit the event bus permissions you are
@@ -162,6 +164,8 @@ type ECSParameters struct {
 	Tags                 []*Tag                 `json:"tags,omitempty"`
 	TaskCount            *int64                 `json:"taskCount,omitempty"`
 	TaskDefinitionARN    *string                `json:"taskDefinitionARN,omitempty"`
+	// Reference field for TaskDefinitionARN
+	TaskDefinitionRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"taskDefinitionRef,omitempty"`
 }
 
 // The event buses the endpoint is associated with.
@@ -329,6 +333,8 @@ type RedshiftDataParameters struct {
 	DBUser *string `json:"dbUser,omitempty"`
 	// Optional SecretManager ARN which stores the database credentials
 	SecretManagerARN *string `json:"secretManagerARN,omitempty"`
+	// Reference field for SecretManagerARN
+	SecretManagerRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"secretManagerRef,omitempty"`
 	// A single Redshift SQL
 	SQL *string `json:"sql,omitempty"`
 	// A list of SQLs.

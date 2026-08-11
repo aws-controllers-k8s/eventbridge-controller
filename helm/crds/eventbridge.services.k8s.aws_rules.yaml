@@ -243,6 +243,20 @@ spec:
                                 type: integer
                               capacityProvider:
                                 type: string
+                              capacityProviderRef:
+                                description: Reference field for CapacityProvider
+                                properties:
+                                  from:
+                                    description: |-
+                                      AWSResourceReference provides all the values necessary to reference another
+                                      k8s resource for finding the identifier(Id/ARN/Name)
+                                    properties:
+                                      name:
+                                        type: string
+                                      namespace:
+                                        type: string
+                                    type: object
+                                type: object
                               weight:
                                 format: int64
                                 type: integer
@@ -327,6 +341,20 @@ spec:
                           type: integer
                         taskDefinitionARN:
                           type: string
+                        taskDefinitionRef:
+                          description: Reference field for TaskDefinitionARN
+                          properties:
+                            from:
+                              description: |-
+                                AWSResourceReference provides all the values necessary to reference another
+                                k8s resource for finding the identifier(Id/ARN/Name)
+                              properties:
+                                name:
+                                  type: string
+                                namespace:
+                                  type: string
+                              type: object
+                          type: object
                       type: object
                     httpParameters:
                       description: |-
@@ -392,6 +420,20 @@ spec:
                           description: Optional SecretManager ARN which stores the
                             database credentials
                           type: string
+                        secretManagerRef:
+                          description: Reference field for SecretManagerARN
+                          properties:
+                            from:
+                              description: |-
+                                AWSResourceReference provides all the values necessary to reference another
+                                k8s resource for finding the identifier(Id/ARN/Name)
+                              properties:
+                                name:
+                                  type: string
+                                namespace:
+                                  type: string
+                              type: object
+                          type: object
                         sql:
                           description: A single Redshift SQL
                           type: string

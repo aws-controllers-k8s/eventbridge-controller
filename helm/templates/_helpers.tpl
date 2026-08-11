@@ -70,6 +70,16 @@ rules:
   - list
   - watch
 - apiGroups:
+  - ecs.services.k8s.aws
+  resources:
+  - capacityproviders
+  - capacityproviders/status
+  - taskdefinitions
+  - taskdefinitions/status
+  verbs:
+  - get
+  - list
+- apiGroups:
   - eventbridge.services.k8s.aws
   resources:
   - archives
@@ -100,6 +110,14 @@ rules:
   resources:
   - roles
   - roles/status
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - secretsmanager.services.k8s.aws
+  resources:
+  - secrets
+  - secrets/status
   verbs:
   - get
   - list

@@ -218,6 +218,44 @@ resources:
           service_name: iam
           resource: Role
           path: Status.ACKResourceMetadata.ARN
+      # NOTE: Targets.DeadLetterConfig.Arn holds an sqs Queue ARN and would
+      # otherwise be a reference, but it cannot be wired. The member is named
+      # only "Arn", and the generated companion name is the field name with its
+      # identifier suffix stripped plus "Ref" -- which leaves nothing here, so
+      # code generation fails outright with "reference field name cannot be just
+      # an identifier suffix". Wiring it would require renaming the member,
+      # which is a breaking CRD change.
+      Targets.RedshiftDataParameters.SecretManagerArn:
+        references:
+          service_name: secretsmanager
+          resource: Secret
+          path: Status.ACKResourceMetadata.ARN
+      Targets.EcsParameters.TaskDefinitionArn:
+        references:
+          service_name: ecs
+          resource: TaskDefinition
+          path: Status.ACKResourceMetadata.ARN
+      # The short name, not an ARN: the API stores and echoes back the name.
+      Targets.EcsParameters.CapacityProviderStrategy.CapacityProvider:
+        references:
+          service_name: ecs
+          resource: CapacityProvider
+          path: Spec.Name
+      # NOTE: Targets.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.Subnets
+      # (ec2 Subnet at Status.SubnetID) and .SecurityGroups (ec2 SecurityGroup at
+      # Status.ID) are both genuine references, but the code-generator emits code
+      # that does not compile for them. It generates the outer
+      # `for f0idx, f0iter := range ko.Spec.Targets` loop and reads through
+      # f0iter, but writes through `ko.Spec.Targets.ECSParameters...` -- dropping
+      # the [f0idx] index -- so the assignment does not typecheck against a slice.
+      #
+      # The trigger is a list-of-scalars terminal sitting under one or more
+      # single-struct levels below a list item. A scalar terminal at the same
+      # depth is fine (TaskDefinitionArn above), and so is a list terminal that
+      # carries its own index (CapacityProviderStrategy above), which is why
+      # ec2-controller's IngressRules.UserIDGroupPairs.GroupID works.
+      #
+      # Wiring these needs a code-generator fix first.
     hooks:
       sdk_read_one_post_set_output:
         template_path: hooks/rule/sdk_read_one_post_set_output.go.tpl
