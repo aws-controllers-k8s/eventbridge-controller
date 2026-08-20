@@ -87,9 +87,8 @@ spec:
                 - message: Value is immutable once set
                   rule: self == oldSelf
               policy:
-                description: |-
-                  Policy is the resource-based policy for this event bus, enabling
-                  cross-account access. Uses PutPermission/RemovePermission APIs.
+                description: The policy that enables the external account to send
+                  events to your account.
                 type: string
               tags:
                 description: Tags to associate with the event bus.

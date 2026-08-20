@@ -19,6 +19,7 @@ import pytest
 import time
 import logging
 
+from acktest.aws.identity import get_account_id
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from acktest.k8s import condition as condition
@@ -128,7 +129,7 @@ class TestEventBus:
         remove policy, verify RemovePermission was called."""
         ref, cr = eventbridge_bus
         bus_name = cr["spec"]["name"]
-        account_id = "356089616410"
+        account_id = get_account_id()
         bus_arn = cr["status"]["ackResourceMetadata"]["arn"]
 
         # Step 1: Set a cross-account resource policy on the bus

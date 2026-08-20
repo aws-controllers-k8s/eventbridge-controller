@@ -140,6 +140,15 @@ class TestRule:
             expected=rule_tags,
         )
 
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check rule doesn't exist
+        assert not eventbridge_validator.rule_exists(event_bus_name, rule_name)
+
     # def test_create_delete_with_targets
 
     def test_rule_simple_update(self, eventbridge_client, simple_rule):
@@ -186,6 +195,15 @@ class TestRule:
             expected=rule_tags,
         )
 
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check rule doesn't exist
+        assert not eventbridge_validator.rule_exists(event_bus_name, rule_name)
+
     def test_rule_update_targets(self, eventbridge_client, simple_rule):
         (ref, cr) = simple_rule
         resources = get_bootstrap_resources()
@@ -209,3 +227,12 @@ class TestRule:
         targets = eventbridge_validator.get_rule_targets(event_bus_name, rule_name)
         assert len(targets) == 1
         assert targets[0]["Id"] == "sqs-queue"
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check rule doesn't exist
+        assert not eventbridge_validator.rule_exists(event_bus_name, rule_name)
