@@ -980,6 +980,11 @@ func (in *EventBusSpec) DeepCopyInto(out *EventBusSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Policy != nil {
+		in, out := &in.Policy, &out.Policy
+		*out = new(string)
+		**out = **in
+	}
 	if in.Tags != nil {
 		in, out := &in.Tags, &out.Tags
 		*out = make([]*Tag, len(*in))
