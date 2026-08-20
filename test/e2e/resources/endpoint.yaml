@@ -12,6 +12,6 @@ spec:
       primary:
         healthCheck: $HEALTH_CHECK_LOCATION
       secondary:
-        route: eu-west-1
+        route: us-west-1
   replicationConfig:
     state: DISABLED

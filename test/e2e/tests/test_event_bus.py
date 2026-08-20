@@ -126,17 +126,22 @@ class TestEventBus:
     def test_cross_account_event_routing_policy(self, eventbridge_client, eventbridge_bus):
         """Verify EventBus spec.policy field enables cross-account event routing:
         set a resource-based policy via ACK, verify PutPermission was called in AWS,
+        update the policy in place and verify the change propagates,
         remove policy, verify RemovePermission was called."""
         ref, cr = eventbridge_bus
         bus_name = cr["spec"]["name"]
         account_id = get_account_id()
         bus_arn = cr["status"]["ackResourceMetadata"]["arn"]
 
-        # Step 1: Set a cross-account resource policy on the bus
+        # Step 1: Set a cross-account resource policy on the bus.
+        # original_sid and updated_sid are chosen so neither is a substring of
+        # the other, so plain string membership checks on the policy document
+        # are unambiguous.
+        original_sid = "AllowCrossAccountInitial"
         policy = json.dumps({
             "Version": "2012-10-17",
             "Statement": [{
-                "Sid": "AllowCrossAccount",
+                "Sid": original_sid,
                 "Effect": "Allow",
                 "Principal": {"AWS": f"arn:aws:iam::{account_id}:root"},
                 "Action": "events:PutEvents",
@@ -157,7 +162,36 @@ class TestEventBus:
         assert bus_desc.get("Policy") is not None, \
             "Expected AWS EventBus Policy to be set"
 
-        # Step 2: Remove policy by setting to null
+        # Step 2: Update the policy in place (change the statement) and verify
+        # the change propagates to AWS via a subsequent PutPermission.
+        updated_sid = "AllowCrossAccountUpdated"
+        updated_policy = json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Sid": updated_sid,
+                "Effect": "Allow",
+                "Principal": {"AWS": f"arn:aws:iam::{account_id}:root"},
+                "Action": ["events:PutEvents"],
+                "Resource": bus_arn,
+            }]
+        })
+        k8s.patch_custom_resource(ref, {"spec": {"policy": updated_policy}})
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+        condition.assert_synced(ref)
+
+        # Assert the updated statement is reflected in AWS and the old one is gone.
+        # PutPermission overwrites the whole policy document, so the previous Sid
+        # must no longer be present.
+        bus_desc = eventbridge_client.describe_event_bus(Name=bus_name)
+        aws_policy = bus_desc.get("Policy")
+        assert aws_policy is not None, \
+            "Expected AWS EventBus Policy to remain set after in-place update"
+        assert updated_sid in aws_policy, \
+            "Expected AWS EventBus Policy to reflect the updated statement Sid"
+        assert original_sid not in aws_policy, \
+            "Expected the original statement Sid to be replaced by the in-place update"
+
+        # Step 3: Remove policy by setting to null
         k8s.patch_custom_resource(ref, {"spec": {"policy": None}})
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
         condition.assert_synced(ref)

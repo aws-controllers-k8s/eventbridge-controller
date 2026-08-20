@@ -34,7 +34,7 @@ CREATE_WAIT_AFTER_SECONDS = 10
 UPDATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def event_bus():
     resource_name = random_suffix_name("eventbridge-bus", 24)
 
@@ -68,10 +68,10 @@ def event_bus():
     try:
         _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted
-    except Exception:
+    except:
         pass
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def simple_rule(event_bus):
     resource_name = random_suffix_name("eventbridge-rule", 24)
     _, eb_cr = event_bus
@@ -148,7 +148,7 @@ class TestRule:
 
         # Check rule doesn't exist
         assert not eventbridge_validator.rule_exists(event_bus_name, rule_name)
-
+    
     # def test_create_delete_with_targets
 
     def test_rule_simple_update(self, eventbridge_client, simple_rule):

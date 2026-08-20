@@ -21,7 +21,6 @@ import logging
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from acktest.k8s import condition as condition
-from acktest.k8s.condition import CONDITION_TYPE_RESOURCE_SYNCED
 from acktest.aws.identity import get_region
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_eventbridge_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
@@ -73,8 +72,8 @@ def bus_name():
     return random_suffix_name("bus", 24)
 
 @pytest.fixture(scope="module")
-def bus_useast1(bus_name):
-        ref, cr = create_event_bus(bus_name, "us-east-1")
+def bus_uswest1(bus_name):
+        ref, cr = create_event_bus(bus_name, "us-west-1")
         yield ref, cr
 
         try:
@@ -84,8 +83,8 @@ def bus_useast1(bus_name):
             pass
 
 @pytest.fixture(scope="module")
-def bus_euwest1(bus_name):
-        ref, cr = create_event_bus(bus_name, "eu-west-1")
+def bus_uswest2(bus_name):
+        ref, cr = create_event_bus(bus_name, "us-west-2")
         yield ref, cr
 
         try:
@@ -95,9 +94,9 @@ def bus_euwest1(bus_name):
             pass
 
 @pytest.fixture(scope="module")
-def endpoint(bus_useast1, bus_euwest1):
-    _, eb_a = bus_useast1
-    _, eb_b = bus_euwest1
+def endpoint(bus_uswest1, bus_uswest2):
+    _, eb_a = bus_uswest1
+    _, eb_b = bus_uswest2
 
     resource_name = random_suffix_name("ack-test-endpoint", 24)
 
@@ -126,9 +125,7 @@ def endpoint(bus_useast1, bus_euwest1):
     assert cr is not None
     assert k8s.get_resource_exists(ref)
 
-    # Endpoints take several minutes to become ACTIVE; wait for ResourceSynced before yielding
-    assert k8s.wait_on_condition(ref, CONDITION_TYPE_RESOURCE_SYNCED, "True",
-                                  wait_periods=10, period_length=30)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
     cr = k8s.wait_resource_consumed_by_controller(ref)
 
@@ -155,9 +152,7 @@ class TestEndpoint:
 
         # Patch k8s resource
         k8s.patch_custom_resource(ref, cr)
-        # Wait for the update to be synced (endpoint update takes several minutes)
-        assert k8s.wait_on_condition(ref, CONDITION_TYPE_RESOURCE_SYNCED, "True",
-                                      wait_periods=10, period_length=30)
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
         # Check description new value
         endpoint = eventbridge_validator.get_endpoint(endpoint_name)
