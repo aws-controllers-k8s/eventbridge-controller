@@ -88,6 +88,9 @@ func (rm *resourceManager) customUpdate(
 	exit := rlog.Trace("rm.customUpdate")
 	defer func() { exit(err) }()
 
+	updated := desired.DeepCopy()
+	updated.SetStatus(latest)
+
 	if delta.DifferentAt("Spec.Tags") {
 		err = rm.syncTags(ctx, latest, desired)
 		if err != nil {
@@ -100,7 +103,7 @@ func (rm *resourceManager) customUpdate(
 			return nil, err
 		}
 	}
-	return desired, nil
+	return rm.concreteResource(updated), nil
 }
 
 // syncPolicy updates the EventBus resource-based policy.
