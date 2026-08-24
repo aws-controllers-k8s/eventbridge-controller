@@ -147,6 +147,11 @@ resources:
       Tags:
         compare:
           is_ignored: true
+      Policy:
+        is_iam_policy: true
+        from:
+          operation: DescribeEventBus
+          path: Policy
     shortNames:
       - eb
       - bus
@@ -165,6 +170,8 @@ resources:
         code: compareTags(delta, a, b)
       sdk_read_one_post_set_output:
         template_path: hooks/eventbus/sdk_read_one_post_set_output.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/eventbus/sdk_create_post_set_output.go.tpl
     exceptions:
       errors:
         404:

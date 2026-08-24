@@ -1,0 +1,22 @@
+apiVersion: eventbridge.services.k8s.aws/v1alpha1
+kind: EventBus
+metadata:
+  name: $BUS_NAME
+spec:
+  name: $BUS_NAME
+  tags:
+  - key: key
+    value: value
+  policy: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "$POLICY_SID",
+          "Effect": "Allow",
+          "Principal": {"AWS": "arn:aws:iam::$ACCOUNT_ID:root"},
+          "Action": "events:PutEvents",
+          "Resource": "arn:aws:events:$REGION:$ACCOUNT_ID:event-bus/$BUS_NAME"
+        }
+      ]
+    }
