@@ -51,6 +51,12 @@ var (
 		fmt.Errorf("endpoint in status %q, cannot be modified or deleted", svcsdktypes.EndpointStateDeleting),
 		defaultRequeueDelay,
 	)
+	// requeueWaitAfterUpdate re-reads the endpoint after an update because the
+	// API is eventually consistent.
+	requeueWaitAfterUpdate = ackrequeue.NeededAfter(
+		errors.New("requeueing after update, the Endpoint API is eventually consistent"),
+		defaultRequeueDelay,
+	)
 )
 
 type validationError struct {
@@ -136,14 +142,20 @@ func endpointInMutatingState(r *resource) bool {
 // explaining the Endpoint cannot be modified until it reaches an available
 // status.
 func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeededAfter {
-	if r.ko.Status.State == nil {
-		return nil
-	}
-	msg := fmt.Sprintf("Endpoint is in status %q, cannot be modified.", *r.ko.Status.State)
+	msg := fmt.Sprintf("Endpoint is in status %q, cannot be modified.", endpointState(r))
 	return ackrequeue.NeededAfter(
 		errors.New(msg),
 		defaultRequeueDelay,
 	)
+}
+
+// endpointState returns the Endpoint state, or "Unknown" when the API has not
+// reported one yet.
+func endpointState(r *resource) string {
+	if r.ko.Status.State == nil {
+		return "Unknown"
+	}
+	return *r.ko.Status.State
 }
 
 // if an optional desired field value is nil explicitly unset it in the request
