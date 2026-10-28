@@ -149,11 +149,11 @@ func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeededAfter {
 	)
 }
 
-// endpointState returns the Endpoint state, or "Unknown" when the API has not
+// endpointState returns the Endpoint state, or "unknown" when the API has not
 // reported one yet.
 func endpointState(r *resource) string {
 	if r.ko.Status.State == nil {
-		return "Unknown"
+		return "unknown"
 	}
 	return *r.ko.Status.State
 }

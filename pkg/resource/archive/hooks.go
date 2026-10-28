@@ -81,11 +81,11 @@ func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeededAfter {
 	)
 }
 
-// archiveState returns the Archive state, or "Unknown" when the API has not
+// archiveState returns the Archive state, or "unknown" when the API has not
 // reported one yet.
 func archiveState(r *resource) string {
 	if r.ko.Status.State == nil {
-		return "Unknown"
+		return "unknown"
 	}
 	return *r.ko.Status.State
 }
