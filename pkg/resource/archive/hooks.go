@@ -71,18 +71,23 @@ func archiveModifying(r *resource) bool {
 // requeueWaitUntilCanModify returns a `ackrequeue.RequeueNeededAfter` struct
 // explaining the Archive cannot be modified until it reaches an available status
 func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeededAfter {
-	if r.ko.Status.State == nil {
-		return nil
-	}
-	status := *r.ko.Status.State
 	msg := fmt.Sprintf(
 		"Archive is in status %q, cannot be modified.",
-		status,
+		archiveState(r),
 	)
 	return ackrequeue.NeededAfter(
 		errors.New(msg),
 		ackrequeue.DefaultRequeueAfterDuration,
 	)
+}
+
+// archiveState returns the Archive state, or "unknown" when the API has not
+// reported one yet.
+func archiveState(r *resource) string {
+	if r.ko.Status.State == nil {
+		return "unknown"
+	}
+	return *r.ko.Status.State
 }
 
 // if an optional desired field value is nil explicitly unset it in the request
