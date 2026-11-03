@@ -122,11 +122,10 @@ func customPreCompare(
 	desired *resource,
 	latest *resource,
 ) {
-	if len(desired.ko.Spec.Tags) != len(latest.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", desired.ko.Spec.Tags, latest.ko.Spec.Tags)
-	}
-
-	if !pkgtags.EqualTags(desired.ko.Spec.Tags, latest.ko.Spec.Tags) {
+	desiredTags, _ := convertToOrderedACKTags(desired.ko.Spec.Tags)
+	latestTags, _ := convertToOrderedACKTags(latest.ko.Spec.Tags)
+	added, _, removed := ackcompare.GetTagsDifference(latestTags, desiredTags)
+	if len(added) > 0 || len(removed) > 0 {
 		delta.Add("Spec.Tags", desired.ko.Spec.Tags, latest.ko.Spec.Tags)
 	}
 
