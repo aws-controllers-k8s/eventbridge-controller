@@ -14,8 +14,10 @@
 package rule
 
 import (
+	"reflect"
 	"testing"
 
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	"github.com/aws/aws-sdk-go-v2/aws"
 
 	"github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
@@ -306,6 +308,89 @@ func Test_equalEventBusName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := equalEventBusName(tt.args.desiredExpression, tt.args.latestExpression); got != tt.want {
 				t.Errorf("equalEventBusName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_tagsDifference(t *testing.T) {
+	tag := func(k, v string) *v1alpha1.Tag {
+		return &v1alpha1.Tag{Key: &k, Value: &v}
+	}
+
+	tests := []struct {
+		name        string
+		desired     []*v1alpha1.Tag
+		latest      []*v1alpha1.Tag
+		wantAdded   map[string]string
+		wantRemoved map[string]string
+	}{
+		{
+			name:        "nil desired and latest tags",
+			desired:     nil,
+			latest:      nil,
+			wantAdded:   map[string]string{},
+			wantRemoved: map[string]string{},
+		},
+		{
+			name:        "identical tags in different order",
+			desired:     []*v1alpha1.Tag{tag("akey", "avalue"), tag("bkey", "bvalue")},
+			latest:      []*v1alpha1.Tag{tag("bkey", "bvalue"), tag("akey", "avalue")},
+			wantAdded:   map[string]string{},
+			wantRemoved: map[string]string{},
+		},
+		{
+			name:        "add tags when latest is empty",
+			desired:     []*v1alpha1.Tag{tag("akey", "avalue"), tag("bkey", "bvalue")},
+			latest:      nil,
+			wantAdded:   map[string]string{"akey": "avalue", "bkey": "bvalue"},
+			wantRemoved: map[string]string{},
+		},
+		{
+			name:        "remove tags when desired is empty",
+			desired:     nil,
+			latest:      []*v1alpha1.Tag{tag("akey", "avalue")},
+			wantAdded:   map[string]string{},
+			wantRemoved: map[string]string{"akey": "avalue"},
+		},
+		// GetTagsDifference has upsert semantics: a changed value appears in "added" with
+		// the new value and NOT in "removed", because TagResource overwrites existing keys.
+		// No UntagResource call is needed.
+		{
+			name:        "value change is in added and not in removed",
+			desired:     []*v1alpha1.Tag{tag("akey", "avalue-new")},
+			latest:      []*v1alpha1.Tag{tag("akey", "avalue-old")},
+			wantAdded:   map[string]string{"akey": "avalue-new"},
+			wantRemoved: map[string]string{},
+		},
+		{
+			name:        "add, remove and value change together",
+			desired:     []*v1alpha1.Tag{tag("akey", "avalue"), tag("ckey", "cvalue")},
+			latest:      []*v1alpha1.Tag{tag("akey", "avalue-old"), tag("bkey", "bvalue")},
+			wantAdded:   map[string]string{"akey": "avalue", "ckey": "cvalue"},
+			wantRemoved: map[string]string{"bkey": "bvalue"},
+		},
+		{
+			name: "nil key is skipped without panic",
+			desired: []*v1alpha1.Tag{
+				{Key: nil, Value: nil},
+				tag("akey", "avalue"),
+			},
+			latest:      []*v1alpha1.Tag{{Key: nil, Value: nil}},
+			wantAdded:   map[string]string{"akey": "avalue"},
+			wantRemoved: map[string]string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			from, _ := convertToOrderedACKTags(tt.latest)
+			to, _ := convertToOrderedACKTags(tt.desired)
+			added, _, removed := ackcompare.GetTagsDifference(from, to)
+			if !reflect.DeepEqual(map[string]string(added), tt.wantAdded) {
+				t.Errorf("GetTagsDifference() added = %v, want %v", added, tt.wantAdded)
+			}
+			if !reflect.DeepEqual(map[string]string(removed), tt.wantRemoved) {
+				t.Errorf("GetTagsDifference() removed = %v, want %v", removed, tt.wantRemoved)
 			}
 		})
 	}

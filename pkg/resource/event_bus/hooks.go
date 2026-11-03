@@ -22,7 +22,6 @@ import (
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/eventbridge-controller/apis/v1alpha1"
-	pkgtags "github.com/aws-controllers-k8s/eventbridge-controller/pkg/tags"
 )
 
 // setResourceAdditionalFields will set the fields that are not returned by
@@ -92,7 +91,7 @@ func (rm *resourceManager) customUpdate(
 	updated.SetStatus(latest)
 
 	if delta.DifferentAt("Spec.Tags") {
-		err = rm.syncTags(ctx, latest, desired)
+		err = rm.syncTags(ctx, desired, latest)
 		if err != nil {
 			return nil, err
 		}
@@ -165,22 +164,30 @@ func (rm *resourceManager) removePolicy(
 // syncTags updates event bus tags
 func (rm *resourceManager) syncTags(
 	ctx context.Context,
-	latest *resource,
 	desired *resource,
+	latest *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncTags")
 	defer func() { exit(err) }()
 
-	missing, extra := pkgtags.ComputeTagsDelta(desired.ko.Spec.Tags, latest.ko.Spec.Tags)
+	from, fromOrder := convertToOrderedACKTags(latest.ko.Spec.Tags)
+	to, toOrder := convertToOrderedACKTags(desired.ko.Spec.Tags)
+	added, _, removed := ackcompare.GetTagsDifference(from, to)
+	toAdd := fromACKTags(added, toOrder)
+	toDelete := fromACKTags(removed, fromOrder)
+
+	if len(toAdd) == 0 && len(toDelete) == 0 {
+		return nil
+	}
 
 	arn := (*string)(latest.ko.Status.ACKResourceMetadata.ARN)
-	if len(extra) > 0 {
+	if len(toDelete) > 0 {
 		_, err = rm.sdkapi.UntagResource(
 			ctx,
 			&svcsdk.UntagResourceInput{
 				ResourceARN: arn,
-				TagKeys:     sdkTagStringsFromResourceTags(extra),
+				TagKeys:     sdkTagStringsFromResourceTags(toDelete),
 			})
 
 		rm.metrics.RecordAPICall("UPDATE", "UntagResource", err)
@@ -189,12 +196,12 @@ func (rm *resourceManager) syncTags(
 		}
 	}
 
-	if len(missing) > 0 {
+	if len(toAdd) > 0 {
 		_, err = rm.sdkapi.TagResource(
 			ctx,
 			&svcsdk.TagResourceInput{
 				ResourceARN: arn,
-				Tags:        sdkTagsFromResourceTags(missing),
+				Tags:        sdkTagsFromResourceTags(toAdd),
 			})
 
 		rm.metrics.RecordAPICall("UPDATE", "TagResource", err)
@@ -233,11 +240,10 @@ func compareTags(
 	desired *resource,
 	latest *resource,
 ) {
-	if len(desired.ko.Spec.Tags) != len(latest.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", desired.ko.Spec.Tags, latest.ko.Spec.Tags)
-		return
-	}
-	if !pkgtags.EqualTags(desired.ko.Spec.Tags, latest.ko.Spec.Tags) {
+	desiredTags, _ := convertToOrderedACKTags(desired.ko.Spec.Tags)
+	latestTags, _ := convertToOrderedACKTags(latest.ko.Spec.Tags)
+	added, _, removed := ackcompare.GetTagsDifference(latestTags, desiredTags)
+	if len(added) > 0 || len(removed) > 0 {
 		delta.Add("Spec.Tags", desired.ko.Spec.Tags, latest.ko.Spec.Tags)
 	}
 }
